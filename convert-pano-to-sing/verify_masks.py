@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 # --- CONFIGURATION ---
-OUTPUT_DIR = Path('data_transformed')
+OUTPUT_DIR = Path('data_transformed') #_transformed
 IMAGE_DIR = OUTPUT_DIR / 'images'
-COCO_INPUT_FILE = OUTPUT_DIR / 'annotations_transformed.coco.json'
+COCO_INPUT_FILE = OUTPUT_DIR / 'annotations_transformed.coco.json' #instance, transformed
 
 # --- UTILITIES ---
 
@@ -25,7 +25,7 @@ def get_annotations_by_image_id(coco_data):
         
     return images_map, annotations_map, {cat['id']: cat['name'] for cat in coco_data['categories']}
 
-def visualize_random_images(images_map, annotations_map, category_map, num_samples=10):
+def visualize_random_images(images_map, annotations_map, category_map, num_samples=5):
     """Selects and visualizes images in separate OpenCV windows with masks overlaid."""
 
     # Select images that actually have annotations
@@ -95,7 +95,7 @@ if __name__ == "__main__":
             images_map, annotations_map, category_map = get_annotations_by_image_id(coco_data)
             
             # Change '5' to the number of images you want to randomly sample and display
-            visualize_random_images(images_map, annotations_map, category_map, num_samples=10)
+            visualize_random_images(images_map, annotations_map, category_map, num_samples=15)
             
         except json.JSONDecodeError:
             print("Error: Failed to decode the COCO JSON file. Check for formatting errors.")

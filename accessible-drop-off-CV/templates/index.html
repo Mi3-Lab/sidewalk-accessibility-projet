@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personalized Drop-off Prototype</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .spot-container { margin-bottom: 30px; border: 1px solid #ccc; padding: 15px; border-radius: 8px; }
+        img { max-width: 100%; height: auto; display: block; margin-bottom: 10px; }
+        .score-bar { height: 20px; border-radius: 5px; margin-top: 10px; transition: width 0.5s ease-in-out; }
+    </style>
+</head>
+<body>
+    <h1>Personalized Drop-off Prototype</h1>
+    
+    <button onclick="loadNewSpot()">Load New Spot</button>
+    
+    <hr>
+
+    <div id="main-spot-container">
+        </div>
+
+    <script>
+        let currentSpotData = null;
+
+        async function loadNewSpot() {
+            const response = await fetch('/api/spot');
+            if (!response.ok) {
+                console.error('Failed to load new spot');
+                return;
+            }
+            currentSpotData = await response.json();
+            renderSpot(currentSpotData);
+        }
+
+        function renderSpot(spot) {
+            const container = document.getElementById('main-spot-container');
+            container.innerHTML = `
+                <h2>Spot ID: ${spot.id}</h2>
+                <img src="${spot.image_url}" alt="Street View image of spot ${spot.id}">
+                <p><strong>Labels:</strong> ${spot.labels.join(", ")}</p>
+                
+                <label for="mobility-aid-select">Select Your Mobility Aid:</label>
+                <select id="mobility-aid-select">
+                    <option value="Cane">Walking Cane</option>
+                    <option value="Walker">Walker</option>
+                    <option value="Mobility Scooter">Mobility Scooter</option>
+                    <option value="Manual Wheelchair">Manual Wheelchair</option>
+                    <option value="Motorized Wheelchair">Motorized Wheelchair</option>
+                </select>
+                <button onclick="getScore()">Get Passability Score</button>
+                <div id="score-output" class="score-output"></div>
+            `;
+        }
+
+        async function getScore() {
+            if (!currentSpotData) {
+                console.error('No spot data loaded.');
+                return;
+            }
+
+            const mobilityAid = document.getElementById('mobility-aid-select').value;
+            const response = await fetch('/api/score', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ spot_data: currentSpotData, mobility_aid: mobilityAid })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                console.error('Error:', error.error);
+                return;
+            }
+
+            const data = await response.json();
+            const score = data.score;
+            const scoreBar = document.createElement('div');
+            const scoreColor = score > 0.7 ? 'green' : score > 0.4 ? 'orange' : 'red';
+            const scorePercentage = (score * 100).toFixed(0);
+
+            scoreBar.className = 'score-bar';
+            scoreBar.style.backgroundColor = scoreColor;
+            scoreBar.style.width = `${scorePercentage}%`;
+            scoreBar.textContent = `Score: ${scorePercentage}%`;
+            scoreBar.style.color = 'white';
+            scoreBar.style.textAlign = 'center';
+
+            const outputDiv = document.getElementById('score-output');
+            outputDiv.innerHTML = '';
+            outputDiv.appendChild(scoreBar);
+        }
+
+        // Load an initial spot when the page loads
+        document.addEventListener('DOMContentLoaded', loadNewSpot);
+    </script>
+</body>
+</html>

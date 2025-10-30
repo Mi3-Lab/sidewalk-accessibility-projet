@@ -5,7 +5,7 @@ MODEL_PATH = "bestv11.pt" #bestv11.pt, train2/weights/bestv12.pt
 
 # This path targets the images inside your 'data/test' folder,
 # matching the structure provided in your data.yaml.
-TEST_IMAGE_SOURCE = "test/images" 
+TEST_IMAGE_SOURCE = "images" 
 
 # The name for the folder where the results will be saved under the 'runs' directory
 OUTPUT_RUN_NAME = "v12_test_v2"

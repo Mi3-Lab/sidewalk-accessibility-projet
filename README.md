@@ -1,8 +1,22 @@
-# Pano-to-Single-View Segmentation Pipeline
+# There are 2 files
 
-This repository contains scripts to transform panoramic (equirectangular) images and their associated COCO segmentation annotations into multiple standard (perspective) single-view images (Front, Left, Right), ensuring that the segmentation masks are accurately re-projected onto the new views.
 
-## 🚀 The Pipeline
+## Accessible-Drop_off
+
+This file contains the actual model under /model.
+You can view some of the test segments in /test.
+In train/ssh.txt, you can view the parameters I used in training the YOLO model, which should be uploaded as an LFS model.
+
+### Requirements
+```bash
+pip install -r requirements.txt
+```
+--------
+## Pano-to-Single-View Segmentation Pipeline (convert-pano-to-sing)
+
+This file contains scripts to transform panoramic (equirectangular) images and their associated COCO segmentation annotations into multiple standard (perspective) single-view images (Front, Left, Right), ensuring that the segmentation masks are accurately re-projected onto the new views.
+
+### The Pipeline
 
 The pipeline consists of three main steps:
 
@@ -11,10 +25,7 @@ The pipeline consists of three main steps:
 3.  **Verification (`verify_masks.py`):** Loads the new data and visually confirms the masks are correctly aligned.
 
 ---
-
-## 🛠️ Requirements
-
-You will need the following libraries installed. (See `requirements.txt`):
-
+### Requirements
 ```bash
 pip install -r requirements.txt
+```

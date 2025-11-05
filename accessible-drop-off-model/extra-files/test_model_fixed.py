@@ -7,13 +7,14 @@ from scipy import ndimage
 import sys
 import os
 
-# Add the data_prep directory to path to import the fixed model
-sys.path.append('extra-files/data_prep')
+# TODO: CURRENTLY ONLT USES LARGEST SIDEWALK - DETECT ALL SIDEWALKS
+
+sys.path.append('extra-files')
 from sidewalk_model_train_fixed import AccessibilityModel
 
 # ---------- CONFIG ----------
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model_path = "accessibility_checkpoint_fixed.pth"  # Use the fixed model
+model_path = "accessibility_checkpoint_fixed.pth"  
 mobility_classes = ["Cane", "Walker", "MobilityScooter", "ManualWheelchair", "MotorizedWheelchair"]
 
 # ---------- LOAD FIXED MODEL ----------
@@ -28,18 +29,18 @@ def load_model(model_path):
         if isinstance(checkpoint, dict):
             if "model_state_dict" in checkpoint:
                 model.load_state_dict(checkpoint["model_state_dict"])
-                print("✅ Loaded fixed model weights from checkpoint.")
+                print("Loaded fixed model weights from checkpoint.")
                 if "epoch" in checkpoint:
                     print(f"Checkpoint epoch: {checkpoint['epoch']}")
                 if "val_loss" in checkpoint:
                     print(f"Validation loss: {checkpoint['val_loss']:.4f}")
             else:
                 model.load_state_dict(checkpoint)
-                print("✅ Loaded model weights from plain state_dict file.")
+                print("Loaded model weights from plain state_dict file.")
         else:
-            raise ValueError("❌ Unrecognized checkpoint format.")
+            raise ValueError("Unrecognized checkpoint format.")
     else:
-        print(f"❌ Model file {model_path} not found. Please train the model first.")
+        print(f"Model file {model_path} not found. Please train the model first.")
         return None
     
     model.eval()
@@ -69,7 +70,8 @@ def extract_sidewalk_crop(scene_image, crop_size=(224, 224), conf=0.5):
         top = (h - crop_h) // 2
         sidewalk_crop = scene_image.crop((left, top, left + crop_w, top + crop_h))
     else:
-        # Find largest connected component
+        # Find largest connected component ONLY USES LARGEST SIDEWALK
+        # TODO : DETECT ALL SIDEWALKS
         labeled, ncomponents = ndimage.label(mask_arr)
         if ncomponents > 0:
             sizes = ndimage.sum(mask_arr, labeled, range(1, ncomponents + 1))
@@ -91,6 +93,46 @@ def extract_sidewalk_crop(scene_image, crop_size=(224, 224), conf=0.5):
 
     return sidewalk_crop.resize(crop_size, resample=Image.BILINEAR)
 
+def test_single_image():
+    """Test model on a single image"""
+    model = load_model(model_path)
+    if model is None:
+        return
+    
+    # Transform
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+
+    test_image_path = "extra_images/Crosswalk/320.jpg"
+
+    scene_img = Image.open(test_image_path).convert("RGB")
+    sidewalk_img = extract_sidewalk_crop(scene_img)
+    
+    # Transform
+    scene_tensor = transform(scene_img).unsqueeze(0).to(device)
+    sidewalk_tensor = transform(sidewalk_img).unsqueeze(0).to(device)
+    
+    # Predict
+    with torch.no_grad():
+        output = model(scene_tensor, sidewalk_tensor)
+        predictions = output.cpu().numpy().flatten()
+    
+    # Display results
+    print("Accessibility Scores (0.0 = inaccessible, 1.0 = fully accessible):")
+    for i, mobility_class in enumerate(mobility_classes):
+        score = predictions[i]
+        accessibility_level = "High" if score > 0.7 else "Medium" if score > 0.4 else "Low"
+        print(f"  {mobility_class:20s}: {score:.3f} ({accessibility_level})")
+    
+    # Overall accessibility
+    overall_score = np.mean(predictions)
+    print(f"  {'Overall Average':20s}: {overall_score:.3f}")
+
+
+
 def test_multiple_images():
     """Test the model on multiple images to see the range of predictions"""
     
@@ -99,7 +141,7 @@ def test_multiple_images():
     if model is None:
         return
     
-    # Transform (same as validation)
+    # Transform 
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
@@ -124,7 +166,7 @@ def test_multiple_images():
             print(f"❌ Image not found: {img_path}")
             continue
             
-        print(f"\n📸 Testing: {os.path.basename(img_path)}")
+        print(f"\nTesting: {os.path.basename(img_path)}")
         
         # Load and process image
         scene_img = Image.open(img_path).convert("RGB")
@@ -163,7 +205,7 @@ def compare_with_ground_truth():
     try:
         gt_df = pd.read_csv("Project_Sidewalk_Data/aggregated_fixed.csv")
     except FileNotFoundError:
-        print("❌ Ground truth file not found. Please run the training script first to generate aggregated_fixed.csv")
+        print("Ground truth file not found. Please run the training script first to generate aggregated_fixed.csv")
         return
     
     # Transform
@@ -234,11 +276,14 @@ def compare_with_ground_truth():
         print(f"  {'Average Error':20s}: {avg_error:.3f}")
 
 if __name__ == "__main__":
-    print("🔧 FIXED ACCESSIBILITY MODEL TESTING")
+    print("FIXED ACCESSIBILITY MODEL TESTING")
     print("This version uses the corrected model architecture and data processing.")
     
-    # Test multiple images
-    test_multiple_images()
+    # # Test multiple images
+    # test_multiple_images()
     
     # Compare with ground truth if available
-    compare_with_ground_truth()
+    # compare_with_ground_truth()
+
+     # Test single image
+    test_single_image()

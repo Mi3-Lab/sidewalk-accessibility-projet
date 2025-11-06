@@ -8,6 +8,7 @@ import sys
 import os
 
 # TODO: CURRENTLY ONLT USES LARGEST SIDEWALK - DETECT ALL SIDEWALKS
+# THIS MODEL IS THE YES/NO ACCESSIBILITY MODEL TESTING SCRIPT
 
 sys.path.append('extra-files')
 from training.sidewalk_model_train_selection import AccessibilityModel

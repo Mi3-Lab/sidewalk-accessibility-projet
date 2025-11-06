@@ -9,6 +9,8 @@ import sys
 import os
 import glob
 
+# THIS MODEL TESTS THE Q-BASED TRAINING APPROACH AND COMPARES WITH GROUND TRUTH Q SCORES
+
 # ---------- PATHS ----------
 sys.path.append('extra-files')
 from training.sidewalk_model_train_compare import AccessibilityModel

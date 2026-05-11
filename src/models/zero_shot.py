@@ -46,11 +46,15 @@ warnings.filterwarnings("ignore", message="y_pred contains classes not in y_true
 # ── Model registry ─────────────────────────────────────────────────────────────
 
 MODELS = {
-    "llava-1.5-7b":  ("llava-hf/llava-1.5-7b-hf",              "llava"),
-    "llava-1.6-7b":  ("llava-hf/llava-v1.6-mistral-7b-hf",     "llava"),
-    "qwen2.5-vl-7b": ("Qwen/Qwen2.5-VL-7B-Instruct",           "qwen25vl"),
-    "qwen2.5-vl-3b": ("Qwen/Qwen2.5-VL-3B-Instruct",           "qwen25vl"),
-    "qwen3-vl-8b":   ("Qwen/Qwen3-VL-8B-Instruct",             "qwen3vl"),
+    "llava-1.5-7b":         ("llava-hf/llava-1.5-7b-hf",              "llava"),
+    "llava-1.6-7b":         ("llava-hf/llava-v1.6-mistral-7b-hf",     "llava"),
+    "qwen2.5-vl-7b":        ("Qwen/Qwen2.5-VL-7B-Instruct",           "qwen25vl"),
+    "qwen2.5-vl-3b":        ("Qwen/Qwen2.5-VL-3B-Instruct",           "qwen25vl"),
+    "qwen3-vl-8b":          ("Qwen/Qwen3-VL-8B-Instruct",             "qwen3vl"),
+    "qwen3-vl-8b-thinking": ("Qwen/Qwen3-VL-8B-Thinking",             "qwen3vl_thinking"),
+    "qwen3-vl-32b":         ("Qwen/Qwen3-VL-32B-Instruct",            "qwen3vl"),
+    "qwen3.6-27b":          ("Qwen/Qwen3.6-27B",                      "qwen36"),
+    "qwen3.6-27b-fp8":     ("Qwen/Qwen3.6-27B-FP8",                  "qwen36_fp8"),
 }
 
 AID_PHRASE = {
@@ -61,11 +65,25 @@ AID_PHRASE = {
     "Motorized wheelchair": "a motorized wheelchair",
 }
 
-PROMPT = (
-    "You are evaluating sidewalk and street accessibility for people with mobility impairments.\n"
-    "Question: Is the sidewalk or path shown in this image accessible to someone using {aid}?\n"
-    "Answer with exactly one word — yes, no, or unsure — and nothing else."
-)
+PROMPTS = {
+    "descriptive": (
+        "You are evaluating sidewalk and street accessibility for people with mobility impairments.\n"
+        "Question: Is the sidewalk or path shown in this image accessible to someone using {aid}?\n"
+        "Answer with exactly one word — yes, no, or unsure — and nothing else."
+    ),
+    "direct": (
+        "Can a person using {aid} pass through the sidewalk in this image?\n"
+        "Answer with one word: yes, no, or unsure."
+    ),
+    "cot": (
+        "Look at this sidewalk image carefully. Consider the surface condition, obstacles, "
+        "curb cuts, width, and any barriers.\n"
+        "Question: Is this sidewalk accessible to someone using {aid}?\n"
+        "Think briefly, then end your answer with one word on the last line: yes, no, or unsure."
+    ),
+}
+
+PROMPT = PROMPTS["descriptive"]
 
 ANSWER_TO_INT = {"no": 0, "unsure": 1, "yes": 2}
 
@@ -118,7 +136,7 @@ def load_model(model_key: str, load_in_4bit: bool = False):
             quantization_config=bnb_cfg,
         )
 
-    elif model_type == "qwen3vl":
+    elif model_type in ("qwen3vl", "qwen3vl_thinking"):
         from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
         processor = AutoProcessor.from_pretrained(hf_id)
         model = Qwen3VLForConditionalGeneration.from_pretrained(
@@ -127,6 +145,27 @@ def load_model(model_key: str, load_in_4bit: bool = False):
             device_map="auto",
             attn_implementation=attn_impl,
             quantization_config=bnb_cfg,
+        )
+
+    elif model_type == "qwen36":
+        from transformers import AutoProcessor, AutoModelForImageTextToText
+        processor = AutoProcessor.from_pretrained(hf_id)
+        model = AutoModelForImageTextToText.from_pretrained(
+            hf_id,
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            attn_implementation=attn_impl,
+            quantization_config=bnb_cfg,
+        )
+
+    elif model_type == "qwen36_fp8":
+        from transformers import AutoProcessor, AutoModelForImageTextToText
+        processor = AutoProcessor.from_pretrained(hf_id)
+        # FP8 weights are pre-quantized — no torch_dtype or quantization_config needed
+        model = AutoModelForImageTextToText.from_pretrained(
+            hf_id,
+            device_map="auto",
+            attn_implementation=attn_impl,
         )
 
     else:
@@ -173,23 +212,92 @@ def batch_qwen2vl(model, processor, images: list, prompt: str) -> list[str]:
 
 
 def batch_qwen3vl(model, processor, images: list, prompt: str) -> list[str]:
-    # Resize images to avoid slow high-res tiling in Qwen3-VL
-    images = [img.resize((448, 448)) for img in images]
-    messages_batch = [
-        [{"role": "user", "content": [{"type": "image", "image": img}, {"type": "text", "text": prompt}]}]
-        for img in images
-    ]
-    texts = [
-        processor.apply_chat_template(m, tokenize=False, add_generation_prompt=True)
-        for m in messages_batch
-    ]
-    inputs = processor(text=texts, images=images, padding=True, return_tensors="pt").to(model.device)
-    with torch.no_grad():
-        out = model.generate(**inputs, max_new_tokens=16, do_sample=False)
-    return [
-        r.strip() for r in
-        processor.batch_decode(out[:, inputs["input_ids"].shape[1]:], skip_special_tokens=True)
-    ]
+    # Qwen3-VL: one image at a time using file:// paths to avoid processor hang
+    import tempfile, os
+    results = []
+    for img in images:
+        img_resized = img.resize((448, 448))
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            tmp_path = f.name
+            img_resized.save(tmp_path, format="JPEG")
+        try:
+            messages = [{"role": "user", "content": [
+                {"type": "image", "image": f"file://{tmp_path}"},
+                {"type": "text",  "text":  prompt},
+            ]}]
+            text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            inputs = processor(text=[text], images=[img_resized], return_tensors="pt").to(model.device)
+            with torch.no_grad():
+                out = model.generate(**inputs, max_new_tokens=16, do_sample=False)
+            response = processor.batch_decode(
+                out[:, inputs["input_ids"].shape[1]:], skip_special_tokens=True
+            )[0].strip()
+        finally:
+            os.unlink(tmp_path)
+        results.append(response)
+    return results
+
+
+def batch_qwen3vl_thinking(model, processor, images: list, prompt: str) -> list[str]:
+    """Qwen3-VL Thinking variant — uses more tokens, strips <think>...</think> block."""
+    import tempfile, os
+    results = []
+    for img in images:
+        img_resized = img.resize((448, 448))
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            tmp_path = f.name
+            img_resized.save(tmp_path, format="JPEG")
+        try:
+            messages = [{"role": "user", "content": [
+                {"type": "image", "image": f"file://{tmp_path}"},
+                {"type": "text",  "text":  prompt},
+            ]}]
+            text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            inputs = processor(text=[text], images=[img_resized], return_tensors="pt").to(model.device)
+            with torch.no_grad():
+                out = model.generate(**inputs, max_new_tokens=1024, do_sample=False)
+            response = processor.batch_decode(
+                out[:, inputs["input_ids"].shape[1]:], skip_special_tokens=True
+            )[0].strip()
+            # Extract the answer after </think> block
+            if "</think>" in response:
+                response = response.split("</think>")[-1].strip()
+        finally:
+            os.unlink(tmp_path)
+        results.append(response)
+    return results
+
+
+def batch_qwen36(model, processor, images: list, prompt: str) -> list[str]:
+    """Qwen3.6 — uses AutoModelForImageTextToText with apply_chat_template returning tensors."""
+    import tempfile, os
+    results = []
+    for img in images:
+        img_resized = img.resize((448, 448))
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            tmp_path = f.name
+            img_resized.save(tmp_path, format="JPEG")
+        try:
+            messages = [{"role": "user", "content": [
+                {"type": "image", "url": tmp_path},  # path direto, sem file://
+                {"type": "text",  "text": prompt},
+            ]}]
+            inputs = processor.apply_chat_template(
+                messages,
+                add_generation_prompt=True,
+                tokenize=True,
+                return_dict=True,
+                return_tensors="pt",
+            ).to(model.device)
+            with torch.no_grad():
+                out = model.generate(**inputs, max_new_tokens=16, do_sample=False)
+            response = processor.decode(
+                out[0][inputs["input_ids"].shape[-1]:], skip_special_tokens=True
+            ).strip()
+        finally:
+            os.unlink(tmp_path)
+        results.append(response)
+    return results
 
 
 def generate_batch(model, processor, model_type: str, images: list, prompt: str) -> list[str]:
@@ -199,6 +307,10 @@ def generate_batch(model, processor, model_type: str, images: list, prompt: str)
         return batch_qwen2vl(model, processor, images, prompt)
     elif model_type == "qwen3vl":
         return batch_qwen3vl(model, processor, images, prompt)
+    elif model_type == "qwen3vl_thinking":
+        return batch_qwen3vl_thinking(model, processor, images, prompt)
+    elif model_type in ("qwen36", "qwen36_fp8"):
+        return batch_qwen36(model, processor, images, prompt)
     raise ValueError(model_type)
 
 
@@ -240,6 +352,9 @@ def main() -> None:
                         help="Images per forward pass (default: 8 for A100 40GB)")
     parser.add_argument("--load_in_4bit",  action="store_true",
                         help="Load model in 4-bit (requires bitsandbytes)")
+    parser.add_argument("--prompt_variant", default="descriptive",
+                        choices=list(PROMPTS.keys()),
+                        help="Prompt variant for sensitivity analysis (default: descriptive)")
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir)
@@ -250,12 +365,19 @@ def main() -> None:
     if args.wandb_project:
         try:
             import wandb
+            run_name = f"zero_shot/{args.model}"
+            if args.prompt_variant != "descriptive":
+                run_name += f"/{args.prompt_variant}"
             wandb_run = wandb.init(
                 project=args.wandb_project,
-                name=f"zero_shot/{args.model}",
+                name=run_name,
                 group="zero_shot",
-                tags=["zero_shot", args.model],
-                config={"model": args.model, "hf_id": MODELS[args.model][0]},
+                tags=["zero_shot", args.model, args.prompt_variant],
+                config={
+                    "model": args.model,
+                    "hf_id": MODELS[args.model][0],
+                    "prompt_variant": args.prompt_variant,
+                },
             )
         except ImportError:
             print("wandb not installed — skipping W&B logging")
@@ -273,10 +395,15 @@ def main() -> None:
     model, processor, model_type = load_model(args.model, load_in_4bit=args.load_in_4bit)
 
     # ── Evaluate per aid ─────────────────────────────────────────────────────
+    prompt_template = PROMPTS[args.prompt_variant]
+    print(f"Prompt variant: {args.prompt_variant}")
+
     all_results: dict = {
-        "model":    args.model,
-        "hf_id":    MODELS[args.model][0],
-        "aids":     {},
+        "model":          args.model,
+        "hf_id":          MODELS[args.model][0],
+        "prompt_variant": args.prompt_variant,
+        "prompt_template": prompt_template,
+        "aids":           {},
     }
     parse_failures = 0
 
@@ -286,7 +413,7 @@ def main() -> None:
             print(f"\n[{aid}] no data — skipping.")
             continue
 
-        prompt = PROMPT.format(aid=AID_PHRASE[aid])
+        prompt = prompt_template.format(aid=AID_PHRASE[aid])
         print(f"\n── {aid} ({len(df_aid)} samples) ──")
 
         y_true, y_pred, raw_responses = [], [], []

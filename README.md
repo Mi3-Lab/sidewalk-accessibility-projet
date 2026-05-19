@@ -1,106 +1,252 @@
-# Sidewalk Accessibility Project
+# Human-Aligned Sidewalk Accessibility Perception
 
-A comprehensive machine learning project for assessing sidewalk accessibility using computer vision and vision-language models. This repository leverages data from Project Sidewalk to predict passability for various mobility aids (e.g., wheelchairs, canes) based on street-level images.
+**Soft-label learning from 829 mobility aid users for accessibility-aware routing**
 
-## Features
+> Paper under review at CoRL 2026.
 
-- **Data Processing**: Aggregates crowdsourced accessibility votes with uncertainty handling.
-- **Vision-Language Models**: Uses CLIP for zero-shot and supervised classification of sidewalk images.
-- **Mobility Aid-Specific Models**: Trains separate models for Cane, Walker, Mobility Scooter, Manual Wheelchair, and Motorized Wheelchair.
-- **Uncertainty-Aware Predictions**: Applies policies to accept only high-confidence predictions.
-- **YOLO Segmentation**: Detects sidewalk features like curb ramps and obstacles.
-- **Panoramic Image Processing**: Converts 360° images to single-view perspectives with re-projected masks.
-- **Web Interface**: Flask app for interactive scoring and visualization.
+---
 
-## Installation
+## Overview
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/sidewalk-accessibility-project.git
-   cd sidewalk-accessibility-project
-   ```
+Sidewalk accessibility is not binary. Two wheelchair users examining the same cracked sidewalk may reach opposite conclusions — not from labeling error, but from real differences in equipment and risk tolerance. We treat this disagreement as signal.
 
-2. Set up Python 3.12 virtual environment:
-   ```bash
-   python3.12 -m venv venv
-   source venv/bin/activate
-   pip install --upgrade pip
-   ```
+From **49,490 ternary votes (yes / unsure / no)** collected from **829 mobility aid users** via [Project Sidewalk](https://projectsidewalk.io/), we build per-aid human probability distributions for 5 mobility aid types. A frozen vision encoder with a per-aid linear probe is trained via **KL divergence against these distributions**, reproducing community-level uncertainty rather than collapsing it to majority votes.
 
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Key results
 
-   This installs the latest versions: PyTorch 2.x, Transformers 5.x, Ultralytics (YOLOv12), etc.
+| Method | Overall F1 | Brier ↓ | Latency (ms/img) |
+|--------|-----------|---------|-----------------|
+| DINOv2-large + Soft-KL (ours) | 0.613 | **0.068** | 78.5 |
+| CLIP ViT-B/32 + Hard-CE | **0.617** | 0.231 | 61.6 |
+| Qwen3-VL-8B (zero-shot) | 0.576 | 0.468 | 6,182 |
+| LLaVA-1.5-7B (zero-shot) | 0.418 | 0.423 | 135 |
 
-3. Download data: Place Project Sidewalk data (CSVs and images) in `data/`. See notebooks for data sources.
+- Soft-KL achieves **3× better calibration** (Brier 0.068 vs 0.231) than standard cross-entropy with no loss in F1
+- DINOv2-large (no language supervision) ties the best CLIP variant on F1 while achieving the lowest Brier score
+- Best zero-shot VLM (Qwen3) comes within 0.041 F1 of the trained probe at **102× higher latency**
+- Routing demo on Pittsburgh PA: accessibility-aware routes achieve up to **+0.102 Δp_yes** at +15% distance overhead for wheelchair users
 
-## Usage
+---
 
-### Preprocessing Data
-Prepare the dataset by aggregating votes and computing uncertainty metrics.
+## Repository structure
+
+```
+sidewalk-accessibility-project/
+│
+├── src/
+│   ├── data/
+│   │   ├── firebase.py               # Parse Firebase JSONL → votes CSV
+│   │   └── preprocess.py             # Tally votes → per-(image×aid) distributions
+│   ├── segmentation/
+│   │   ├── deproject.py              # GSV panorama → rectified 90° crops
+│   │   ├── segment.py                # YOLOv12-seg mask extraction
+│   │   └── verify.py                 # Area-ratio filter (A_pred/A_gt ∈ [0.7,1.3])
+│   ├── models/
+│   │   ├── train.py                  # Linear probe training (Soft-KL + Hard-CE)
+│   │   ├── crossval.py               # 5-fold panorama-level cross-validation
+│   │   ├── train_final_model.py      # Train on full dataset (for routing)
+│   │   ├── infer.py                  # Single-image inference
+│   │   ├── zero_shot.py              # VLM zero-shot evaluation
+│   │   ├── latency_benchmark.py      # Encoder + VLM latency measurement
+│   │   ├── error_analysis.py         # Per-aid error analysis (walking cane study)
+│   │   ├── compute_vlm_brier.py      # Soft Brier scores for VLM predictions
+│   │   ├── plot_results.py           # Publication figures (Fig 1–5)
+│   │   └── summarize_cv.py           # CV results summary table
+│   ├── routing/
+│   │   ├── fetch_ps_labels.py        # Download Project Sidewalk GPS labels
+│   │   ├── score_osm_edges.py        # Snap PS labels → OSM graph edges
+│   │   ├── demo.py                   # Accessibility-aware routing (Dijkstra)
+│   │   └── plot_barrier_cost_pareto.py # Pareto curve: accessibility vs distance
+│   └── generalization/
+│       ├── download_city_images.py   # Download GSV thumbnails for new cities
+│       └── evaluate_generalization.py # Out-of-distribution evaluation
+│
+├── data/
+│   └── processed/
+│       ├── tallies_firebase.json     # 260 (image×aid) soft-label distributions
+│       └── image_selection_firebase.csv  # 49,490 raw votes, 829 participants
+│
+├── models/
+│   └── yolo/bestv12.pt               # YOLOv12-seg checkpoint (sidewalk segmentation)
+│
+├── results/
+│   ├── cv/{soft_kl,hard_ce}/         # CV results per encoder (JSON + logs)
+│   ├── zero_shot/                    # VLM zero-shot results + Brier comparison
+│   ├── figures/                      # Publication figures (PDF + PNG)
+│   ├── generalization/               # Out-of-distribution results
+│   ├── routing/                      # Routing figures + Pareto curve
+│   ├── error_analysis/               # Walking cane analysis
+│   └── latency/                      # Latency benchmark results
+│
+├── paper/                            # LaTeX manuscript (excluded from git)
+├── notebooks/                        # Exploratory notebooks
+│
+├── run_cv.sh                         # Run 5-fold CV for all 8 encoders
+├── run_zero_shot.sh                  # Run VLM zero-shot evaluation
+├── run_latency.sh                    # Run latency benchmark
+├── run_prompt_sensitivity.sh         # Run prompt sensitivity analysis (3×3)
+├── run_generalization.sh             # Run generalization evaluation
+└── run_routing_demo.sh               # Full routing pipeline
+```
+
+---
+
+## Setup
+
+**Requirements:** Python 3.11+, CUDA GPU recommended (A100 40GB used in experiments).
 
 ```bash
-python src/preprocess.py --votes_csv data/image_selection.csv --output data/tallies.json
+git clone https://github.com/wesleymaia999/sidewalk-accessibility-project.git
+cd sidewalk-accessibility-project
+python3.11 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 ```
 
-### Training Models
-Train CLIP-based classifiers for each mobility aid.
+**Data:** Place Project Sidewalk data in `data/processed/`:
+- `tallies_firebase.json` — per-(image×aid) vote distributions (260 rows)
+- `image_selection_firebase.csv` — raw votes (49,490 rows)
+- Sidewalk crop images in `data/images/sidewalk-images/`
+
+---
+
+## Reproducing experiments
+
+All scripts below write results to `results/` and accept a `WANDB_PROJECT` env var for logging.
+
+### Cross-validation (main results)
 
 ```bash
-python src/train.py --tallies_json data/tallies.json --images_dir data/sidewalk-images --output_dir models/
+# Soft-KL — paper method (all 8 encoders × 5 folds)
+./run_cv.sh
+
+# Hard-CE ablation baseline
+LOSS_TYPE=hard_ce ./run_cv.sh
 ```
 
-### Inference
-Predict accessibility on a new image.
+Results → `results/cv/{soft_kl,hard_ce}/<encoder>/cv_results.json`
+
+### Zero-shot VLM evaluation
 
 ```bash
-python src/infer.py --image path/to/image.jpg --models_dir models/
+./run_zero_shot.sh
 ```
 
-### Training YOLO Models
-Train YOLOv12 for sidewalk feature detection.
+Results → `results/zero_shot/<model>/zero_shot_results.json`
+
+### Brier score comparison (probe vs VLMs)
 
 ```bash
-python src/train_yolo.py --data data.yaml --model yolo12n.pt --epochs 100
+python src/models/compute_vlm_brier.py \
+    --results results/zero_shot/qwen3-vl-8b/zero_shot_results.json \
+              results/zero_shot/qwen2.5-vl-7b/zero_shot_results.json \
+              results/zero_shot/llava-1.5-7b/zero_shot_results.json \
+    --output  results/zero_shot/vlm_brier_comparison.json
 ```
 
-### Inferring with YOLO
-Detect features in images.
+### Latency benchmark
 
 ```bash
-python src/infer_yolo.py --model best.pt --source image.jpg --save
+./run_latency.sh
 ```
 
-## Project Structure
+Results → `results/latency/latency_results.json`
 
-```
-.
-├── src/                    # Main source code
-│   ├── preprocess.py       # Data preprocessing
-│   ├── train.py            # Model training
-│   └── infer.py            # Inference
-├── data/                   # Datasets and processed data
-├── models/                 # Trained model artifacts
-├── scripts/                # Utility scripts
-├── tests/                  # Unit tests
-├── accessible-drop-off-CV/ # YOLO-based CV models
-├── accessible-drop-off-model/ # ML models for accessibility
-├── convert-pano-to-sing/   # Panoramic image processing
-├── requirements.txt        # Python dependencies
-└── README.md
+### Generalization to unseen cities
+
+```bash
+# 1. Download images (Pittsburgh + Zurich, 250 images each city)
+python src/generalization/download_city_images.py \
+    --city pittsburgh --n_per_class 100 \
+    --output_dir data/generalization/images/pittsburgh \
+    --append_csv data/generalization/test_images.csv
+
+# 2. Evaluate
+./run_generalization.sh dinov2-large results/models/dinov2-large
 ```
 
-## Contributing
+Results → `results/generalization/dinov2-large/agreement_summary.json`
 
-Contributions are welcome! Please open issues or pull requests for improvements.
+### Accessibility-aware routing
 
-## License
+```bash
+./run_routing_demo.sh
+```
 
-This project is licensed under the MIT License. See LICENSE for details.
+Runs the full pipeline: fetch Project Sidewalk Pittsburgh labels → score OSM edges → Dijkstra routing → barrier_cost ablation.
+
+Results → `results/routing/`
+
+### Publication figures
+
+```bash
+python src/models/plot_results.py
+```
+
+Generates Fig 1–5 in `results/figures/`.
+
+---
+
+## Results summary
+
+### Table 1 — Hard-CE macro-F1 per encoder (5-fold CV)
+
+| Encoder | Cane | Walker | Scooter | Man.WC | Mot.WC | **Overall** |
+|---------|------|--------|---------|--------|--------|------------|
+| CLIP B/32 | 0.453 | **0.761** | 0.558 | **0.675** | 0.639 | **0.617** |
+| DINOv2-base | 0.446 | 0.720 | 0.668 | 0.574 | **0.664** | 0.614 |
+| DINOv2-large | 0.489 | 0.675 | **0.746** | 0.502 | 0.652 | 0.613 |
+| SigLIP2-base | 0.458 | 0.700 | 0.587 | 0.572 | 0.664 | 0.596 |
+| CLIP L/14 | 0.453 | 0.707 | 0.698 | 0.523 | 0.597 | 0.595 |
+| ViT-B/16-sup | **0.513** | 0.682 | 0.606 | 0.553 | 0.509 | 0.572 |
+| SigLIP2-SO400M | 0.453 | 0.669 | 0.519 | 0.483 | 0.652 | 0.555 |
+| CLIP B/16 | 0.434 | 0.536 | 0.569 | 0.562 | 0.618 | 0.544 |
+
+### Routing — Pittsburgh PA (Forbes/Murray corridor)
+
+| Mobility Aid | Std. p_yes | Acc. p_yes | Δ access | Δ dist |
+|-------------|-----------|-----------|----------|--------|
+| Walking cane | 0.753 | 0.763 | +0.010 | +58m (+3%) |
+| Walker | 0.658 | 0.703 | +0.045 | +187m (+9%) |
+| Mobility scooter | 0.561 | 0.643 | +0.082 | +267m (+13%) |
+| Manual wheelchair | 0.485 | 0.573 | +0.088 | +301m (+15%) |
+| Motorized wheelchair | 0.516 | 0.618 | +0.102 | +313m (+15%) |
+
+Each aid produces a **genuinely different optimal route** when real per-edge accessibility scores are used.
+
+---
+
+## Encoders evaluated
+
+| # | Model | HuggingFace ID | Dim |
+|---|-------|----------------|-----|
+| 1 | CLIP ViT-B/32 | `openai/clip-vit-base-patch32` | 512 |
+| 2 | CLIP ViT-B/16 | `openai/clip-vit-base-patch16` | 512 |
+| 3 | CLIP ViT-L/14 | `openai/clip-vit-large-patch14` | 768 |
+| 4 | DINOv2-base | `facebook/dinov2-base` | 768 |
+| 5 | DINOv2-large | `facebook/dinov2-large` | 1024 |
+| 6 | SigLIP2-base | `google/siglip2-base-patch16-224` | 768 |
+| 7 | SigLIP2-SO400M | `google/siglip2-so400m-patch14-384` | 1152 |
+| 8 | ViT-B/16-sup | `timm/vit_base_patch16_224.augreg2_in21k_ft_in1k` | 768 |
+
+---
+
+## Citation
+
+```bibtex
+@inproceedings{maia2026sidewalk,
+  title     = {Human-Aligned Sidewalk Accessibility Perception: Soft-Label Learning
+               from 829 Mobility Aid Users for Autonomous Mobility Services},
+  author    = {Maia, Wesley and {others}},
+  booktitle = {Conference on Robot Learning (CoRL)},
+  year      = {2026},
+}
+```
+
+---
 
 ## Acknowledgments
 
-- Data from [Project Sidewalk](https://projectsidewalk.io/).
-- Built with CLIP, YOLO, and other open-source tools.
+- Crowdsourced labels collected via [Project Sidewalk](https://projectsidewalk.io/) (Saha et al., CHI 2019)
+- Street View thumbnails via Google Street View API
+- OpenStreetMap pedestrian graphs via [OSMnx](https://github.com/gboeing/osmnx)

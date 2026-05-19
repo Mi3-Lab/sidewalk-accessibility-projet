@@ -24,7 +24,7 @@ From **49,490 ternary votes (yes / unsure / no)** collected from **829 mobility 
 - Soft-KL achieves **3× better calibration** (Brier 0.068 vs 0.231) than standard cross-entropy with no loss in F1
 - DINOv2-large (no language supervision) ties the best CLIP variant on F1 while achieving the lowest Brier score
 - Best zero-shot VLM (Qwen3) comes within 0.041 F1 of the trained probe at **102× higher latency**
-- Routing demo on Pittsburgh PA: accessibility-aware routes achieve up to **+0.102 Δp_yes** at +15% distance overhead for wheelchair users
+- Routing demo on Pittsburgh PA: accessibility-aware routes achieve up to **+0.155 Δp_yes** at +25% distance overhead, with 91.7% of edges scored by real DINOv2-large predictions
 
 ---
 
@@ -204,13 +204,15 @@ Generates Fig 1–5 in `results/figures/`.
 
 ### Routing — Pittsburgh PA (Forbes/Murray corridor)
 
+91.7% of OSM edges scored with real DINOv2-large predictions (up from 40.4% with PS labels only); remaining 8.3% use population-level priors. Barrier cost bc=8 (inflection of Pareto curve).
+
 | Mobility Aid | Std. p_yes | Acc. p_yes | Δ access | Δ dist |
 |-------------|-----------|-----------|----------|--------|
-| Walking cane | 0.753 | 0.763 | +0.010 | +58m (+3%) |
-| Walker | 0.658 | 0.703 | +0.045 | +187m (+9%) |
-| Mobility scooter | 0.561 | 0.643 | +0.082 | +267m (+13%) |
-| Manual wheelchair | 0.485 | 0.573 | +0.088 | +301m (+15%) |
-| Motorized wheelchair | 0.516 | 0.618 | +0.102 | +313m (+15%) |
+| Walking cane | 0.516 | 0.671 | +0.155 | +575m (+25%) |
+| Walker | 0.486 | 0.630 | +0.144 | +575m (+25%) |
+| Mobility scooter | 0.459 | 0.600 | +0.141 | +412m (+18%) |
+| Manual wheelchair | 0.442 | 0.576 | +0.134 | +447m (+19%) |
+| Motorized wheelchair | 0.446 | 0.592 | +0.146 | +575m (+25%) |
 
 Each aid produces a **genuinely different optimal route** when real per-edge accessibility scores are used.
 

@@ -476,6 +476,11 @@ def main():
         "--encoder", default="dinov2-large",
         help="Encoder to use when --checkpoint is set.",
     )
+    parser.add_argument(
+        "--graph_cache", default=None,
+        help="Path to a GraphML file. If it exists, load the graph from it (reproducible); "
+             "if it doesn't exist, download OSM and save it here for future runs.",
+    )
     args = parser.parse_args()
 
     if not HAS_OSMNX:
@@ -487,13 +492,24 @@ def main():
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    if args.place:
+    if args.graph_cache and Path(args.graph_cache).exists():
+        print(f"\nLoading cached pedestrian graph from {args.graph_cache}")
+        G = ox.load_graphml(args.graph_cache)
+        G = G.to_undirected()
+    elif args.place:
         print(f"\nDownloading pedestrian graph for: {args.place}")
         G = ox.graph_from_place(args.place, network_type="walk", simplify=True)
+        G = G.to_undirected()
     else:
         print(f"\nDownloading pedestrian graph: ({args.lat}, {args.lon}), r={args.dist}m  [Oakland, Pittsburgh PA]")
         G = ox.graph_from_point((args.lat, args.lon), dist=args.dist, network_type="walk", simplify=True)
-    G = G.to_undirected()
+        G = G.to_undirected()
+
+    if args.graph_cache and not Path(args.graph_cache).exists():
+        Path(args.graph_cache).parent.mkdir(parents=True, exist_ok=True)
+        ox.save_graphml(G, args.graph_cache)
+        print(f"Graph cached to {args.graph_cache}")
+
     print(f"Graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
 
     # ── Score edges ───────────────────────────────────────────────────────────

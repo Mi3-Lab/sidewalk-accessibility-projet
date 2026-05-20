@@ -2,11 +2,11 @@
 """
 Generate figure: Soft-KL vs Hard-CE routing comparison (cross-evaluation).
 
-Shows for each aid:
-  - Standard (distance-only) route: grey bar
-  - Soft-KL optimal route scored by Soft-KL (calibrated ground truth): blue bar
-  - Hard-CE optimal route scored by Soft-KL (calibrated view of HCE path): red bar
-  - Hard-CE self-reported score (inflated): red hatch bar
+Two-panel layout:
+  Left  — calibrated routing quality: std / Soft-KL route / Hard-CE route,
+           all evaluated by the Soft-KL (calibrated) metric.
+  Right — Hard-CE overestimation: how much Hard-CE inflates its own route
+           quality vs what the calibrated metric says.
 
 Usage:
     python src/routing/plot_hardce_comparison.py \
@@ -21,16 +21,20 @@ from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 import numpy as np
 
 AIDS_SHORT = {
-    "Walking cane":       "Cane",
-    "Walker":             "Walker",
-    "Mobility scooter":   "Scooter",
-    "Manual wheelchair":  "Man. WC",
+    "Walking cane":         "Cane",
+    "Walker":               "Walker",
+    "Mobility scooter":     "Scooter",
+    "Manual wheelchair":    "Man. WC",
     "Motorized wheelchair": "Mot. WC",
 }
+
+CLR_STD  = "#aaaaaa"
+CLR_SKL  = "#2980b9"
+CLR_HCE  = "#e74c3c"
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -38,52 +42,67 @@ def main():
     parser.add_argument("--output", default="results/routing/hard_ce_comparison/routing_hardce_comparison.png")
     args = parser.parse_args()
 
-    data = json.load(open(args.input))
+    data   = json.load(open(args.input))
+    labels = [AIDS_SHORT[r["aid"]] for r in data]
+    x      = np.arange(len(data))
+    w      = 0.25
 
-    aids   = [r["aid"] for r in data]
-    labels = [AIDS_SHORT[a] for a in aids]
+    p_std      = np.array([r["p_yes_std_by_skl"] for r in data])
+    p_skl      = np.array([r["p_yes_skl_by_skl"] for r in data])
+    p_hce_cal  = np.array([r["p_yes_hce_by_skl"] for r in data])
+    p_hce_self = np.array([r["p_yes_hce_by_hce"] for r in data])
+    overest    = p_hce_self - p_hce_cal          # inflation = self-report minus reality
+    gap        = np.array([r["calibrated_gap"]   for r in data])  # SKL − HCE (calibrated)
 
-    p_std = np.array([r["p_yes_std_by_skl"] for r in data])
-    p_skl = np.array([r["p_yes_skl_by_skl"] for r in data])
-    p_hce_cal  = np.array([r["p_yes_hce_by_skl"] for r in data])   # HCE route, calibrated
-    p_hce_self = np.array([r["p_yes_hce_by_hce"] for r in data])   # HCE self-reported
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.2),
+                                   gridspec_kw={"width_ratios": [3, 2]})
 
-    x = np.arange(len(aids))
-    width = 0.20
+    # ── Left panel: calibrated routing quality ─────────────────────────────
+    ax1.bar(x - w, p_std,     w, label="Shortest path",              color=CLR_STD, zorder=3)
+    ax1.bar(x,     p_skl,     w, label="Soft-KL route",              color=CLR_SKL, zorder=3)
+    ax1.bar(x + w, p_hce_cal, w, label="Hard-CE route",              color=CLR_HCE, zorder=3)
 
-    fig, ax = plt.subplots(figsize=(8, 4.5))
+    # Annotate the gap (Soft-KL advantage over Hard-CE)
+    for i in range(len(data)):
+        y_top = max(p_skl[i], p_hce_cal[i]) + 0.004
+        ax1.annotate(f"Δ={gap[i]:+.3f}",
+                     xy=(x[i] + 0.5*w, y_top), ha="right", va="bottom",
+                     fontsize=7, color=CLR_SKL, fontweight="bold")
 
-    bars_std  = ax.bar(x - 1.5*width, p_std,      width, label="Shortest path",             color="#aaaaaa", zorder=3)
-    bars_skl  = ax.bar(x - 0.5*width, p_skl,      width, label="Soft-KL route (calibrated)",color="#2980b9", zorder=3)
-    bars_hcec = ax.bar(x + 0.5*width, p_hce_cal,  width, label="Hard-CE route (calibrated)", color="#e74c3c", zorder=3)
-    bars_hces = ax.bar(x + 1.5*width, p_hce_self, width, label="Hard-CE route (self-report, inflated)",
-                       color="#e74c3c", alpha=0.35, hatch="///", zorder=3)
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(labels, fontsize=10)
+    ax1.set_ylabel("Mean $\\hat{p}_\\mathrm{yes}$ along route\n(Soft-KL calibrated metric)", fontsize=9)
+    ax1.set_ylim(0.38, 0.78)
+    ax1.set_title("(a) Routing quality — Soft-KL beats Hard-CE\non every aid (calibrated evaluation)", fontsize=9)
+    ax1.legend(fontsize=8.5, loc="lower right")
+    ax1.grid(axis="y", linestyle="--", alpha=0.45, zorder=0)
+    ax1.spines["top"].set_visible(False)
+    ax1.spines["right"].set_visible(False)
 
-    # Annotate calibrated gaps
-    for i, r in enumerate(data):
-        gap = r["calibrated_gap"]
-        y_top = p_skl[i] + 0.003
-        ax.annotate(f"Δ={gap:+.3f}", xy=(x[i] - 0.5*width, y_top), ha="center", va="bottom",
-                    fontsize=6.5, color="#2980b9")
+    # ── Right panel: Hard-CE overestimation ───────────────────────────────
+    ax2.bar(x, overest, 0.45, color=CLR_HCE, zorder=3, alpha=0.85)
+    for i in range(len(data)):
+        ax2.text(x[i], overest[i] + 0.002, f"+{overest[i]:.3f}",
+                 ha="center", va="bottom", fontsize=8, color=CLR_HCE, fontweight="bold")
 
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels, fontsize=10)
-    ax.set_ylabel("Mean $\\hat{p}_\\mathrm{yes}$ along route", fontsize=10)
-    ax.set_ylim(0.38, 0.85)
-    ax.set_title("Routing quality: Soft-KL vs Hard-CE edge scores\n"
-                 "(evaluated by calibrated Soft-KL metric — ground truth)", fontsize=10)
-    ax.legend(fontsize=8, loc="upper right")
-    ax.grid(axis="y", linestyle="--", alpha=0.5, zorder=0)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(labels, fontsize=10)
+    ax2.set_ylabel("Self-report minus calibrated $\\hat{p}_\\mathrm{yes}$", fontsize=9)
+    ax2.set_ylim(0, 0.14)
+    ax2.set_title("(b) Hard-CE overestimates own\nroute quality (miscalibration)", fontsize=9)
+    ax2.axhline(0, color="black", linewidth=0.8)
+    ax2.grid(axis="y", linestyle="--", alpha=0.45, zorder=0)
+    ax2.spines["top"].set_visible(False)
+    ax2.spines["right"].set_visible(False)
 
-    fig.tight_layout()
+    fig.tight_layout(pad=2.0)
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(str(out), dpi=150, bbox_inches="tight")
     fig.savefig(str(out).replace(".png", ".pdf"), bbox_inches="tight")
     print(f"Saved → {out}")
     print(f"Saved → {str(out).replace('.png', '.pdf')}")
+
 
 if __name__ == "__main__":
     main()

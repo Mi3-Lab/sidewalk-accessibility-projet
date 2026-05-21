@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """
 Score ALL OSM pedestrian edges via DINOv2-large inference on GSV thumbnails.
 

@@ -196,6 +196,26 @@ Motorized wheelchair & 0.482 & 0.222 & 0.466 & 0.840 & 52.6 & 13.4 \\
 \end{tabular}
 \end{table*}
 
+\textbf{DINOv2 feature-support diagnostic for extrapolation.} The routing graph applies the 52-view probe to additional Pittsburgh GSV views, so this step is a transfer assumption rather than a direct calibration test. To quantify visual support in the same representation used by the routing probe, we embedded the 55 local audit images available on disk and 437 labelled GSV images from Pittsburgh, Detroit, Zurich, and Taipei with frozen DINOv2-large. Distances are nearest-audit cosine distances in the L2-normalised feature space; the audit leave-one-out distribution provides an in-support reference scale. Table~\ref{tab:supp_visual_support} shows that Pittsburgh routing-style images lie close to the audit support under DINOv2 (12.3\% above the audit P90, near the 10\% leave-one-out reference), while Taipei is entirely outside this support, matching the near-chance Taipei transfer result in main Table~5. We therefore treat routing inference as a supported Pittsburgh map-prior demonstration, not as evidence that the 52-view Brier calibration is preserved globally. A deployed AV system should combine this prior with live onboard verification or an OOD gate.
+
+\begin{table*}[!t]
+\caption{\textbf{DINOv2-large feature-support diagnostic.} Nearest-audit cosine distance in the same frozen feature space used by the Soft-KL routing probe. Higher values mean farther from the 52-view audit support. ``Above audit P90'' is the fraction of external images farther than the 90th percentile of audit leave-one-out distances.}
+\label{tab:supp_visual_support}
+\centering\scriptsize
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+\textbf{Group} & \textbf{n} & \textbf{Mean} & \textbf{P25} & \textbf{P50} & \textbf{P90} & \textbf{Above audit P90} \\
+\midrule
+Audit leave-one-out & 55  & 0.428 & 0.347 & 0.408 & 0.610 & 10.0\% \\
+Detroit             & 91  & 0.428 & 0.377 & 0.407 & 0.530 & 3.3\% \\
+Pittsburgh          & 162 & 0.485 & 0.413 & 0.461 & 0.625 & 12.3\% \\
+Taipei              & 95  & 0.768 & 0.740 & 0.773 & 0.819 & 100.0\% \\
+Zurich              & 89  & 0.796 & 0.753 & 0.804 & 0.868 & 98.9\% \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
 \FloatBarrier
 \section[Barrier-Cost Pareto Sweep]{Pareto Sweep over Barrier-Cost $\beta_c$}
 \label{sec:supp_pareto}

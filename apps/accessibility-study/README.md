@@ -50,11 +50,22 @@ Stop the server:
 - Shows image passability trials.
 - Shows route preference trials.
 - Autosaves progress in the browser.
+- Submits the final response through Netlify Forms when deployed on Netlify.
 - Exports JSON and CSV.
-- Runs without a backend for pilot testing.
+- Runs without a custom backend for pilot testing.
 
-## Pilot Use
+## Public Deployment
 
-Use the static app for Phase 0 and Phase 1. For the main study, add a backend endpoint that receives the same exported JSON schema.
+Build the deployable Netlify folder:
 
-The current image paths reference `paper/images/` so the app should be served from the repository root.
+```bash
+python scripts/build_public_study.py
+```
+
+Then deploy the generated `public-study/` folder using Netlify Drop or the Netlify CLI. See:
+
+```text
+docs/DEPLOY_PUBLIC_STUDY.md
+```
+
+The current image paths reference `data/generalization/images/pittsburgh/`, so the app should be served from the repository root during local testing. The build script rewrites paths for public deployment.

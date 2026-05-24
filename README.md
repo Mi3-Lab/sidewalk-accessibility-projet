@@ -4,7 +4,7 @@
 
 > Paper under review at CoRL 2026.
 
-![Five per-aid routes on the Pittsburgh Forbes/Murray corridor. Each mobility aid traces a structurally distinct optimal path when the planner consumes calibrated per-aid edge probabilities.](paper/images/route_all_aids_overlay.png)
+![Five per-aid routes on the Pittsburgh Forbes/Murray corridor. Each mobility aid traces a structurally distinct optimal path when the planner consumes calibrated per-aid edge probabilities.](assets/route_all_aids_overlay.png)
 
 ---
 

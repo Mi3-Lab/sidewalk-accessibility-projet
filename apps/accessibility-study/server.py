@@ -8,7 +8,11 @@ import json
 import os
 import sys
 from datetime import datetime, timezone
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import SimpleHTTPRequestHandler
+from socketserver import ThreadingMixIn
+
+class ThreadedHTTPServer(ThreadingMixIn, __import__('http.server', fromlist=['HTTPServer']).HTTPServer):
+    daemon_threads = True
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -65,7 +69,7 @@ class StudyHandler(SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     host = os.environ.get("HOST", "0.0.0.0")
-    server = HTTPServer((host, port), StudyHandler)
+    server = ThreadedHTTPServer((host, port), StudyHandler)
     print(f"Study server on http://{host}:{port}/  submissions → {SUBMISSIONS_DIR}", flush=True)
     try:
         server.serve_forever()

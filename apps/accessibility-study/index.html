@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sidewalk Accessibility Study</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Accessibility Study</p>
+        <h1>Sidewalk and Route Review</h1>
+      </div>
+      <div class="progress-wrap" aria-live="polite">
+        <span id="progressText">Not started</span>
+        <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+      </div>
+    </header>
+
+    <main id="app" class="app-shell" tabindex="-1"></main>
+
+    <template id="consentTemplate">
+      <section class="panel">
+        <h2>Help evaluate Pittsburgh sidewalk accessibility</h2>
+        <p>
+          You will review Pittsburgh street-view sidewalk scenes and route options represented by
+          sampled scenes from each route. You can skip any question and stop at any time. The app
+          does not ask for your name.
+        </p>
+        <div class="notice">
+          This pilot stores responses in this browser until you export them. For a formal study, the
+          same records can be submitted to a secure research server.
+        </div>
+        <button class="primary wide" data-action="start">Start</button>
+      </section>
+    </template>
+
+    <template id="profileTemplate">
+      <section class="panel">
+        <h2>Your mobility profile</h2>
+        <label class="field">
+          <span>Your name or study code <span class="muted-label">(optional, only for tracking your session)</span></span>
+          <input type="text" id="participantName" placeholder="e.g. Angel, P04, …" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span>Primary mobility aid</span>
+          <select id="aidSelect">
+            <option value="">Select one</option>
+            <option value="manual_wheelchair">Manual wheelchair</option>
+            <option value="motorized_wheelchair">Motorized wheelchair</option>
+            <option value="mobility_scooter">Mobility scooter</option>
+            <option value="walker">Walker</option>
+            <option value="walking_cane">Walking cane</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>How often do sidewalk conditions affect your route choices?</span>
+          <select id="experienceSelect">
+            <option value="">Select one</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="sometimes">Sometimes</option>
+            <option value="rarely">Rarely</option>
+          </select>
+        </label>
+        <fieldset>
+          <legend>What matters most for your routes? Select any.</legend>
+          <div class="chips" data-chip-group="concerns">
+            <button type="button" data-value="curb_ramps">Curb ramps</button>
+            <button type="button" data-value="surface">Surface or cracks</button>
+            <button type="button" data-value="width">Path width</button>
+            <button type="button" data-value="slope">Slope</button>
+            <button type="button" data-value="crossings">Crossings</button>
+            <button type="button" data-value="obstructions">Obstructions</button>
+          </div>
+        </fieldset>
+        <button class="primary wide" data-action="save-profile">Continue</button>
+      </section>
+    </template>
+
+    <template id="tutorialTemplate">
+      <section class="panel">
+        <h2>How it works</h2>
+        <div class="tutorial-grid">
+          <div>
+            <img src="../../data/generalization/images/pittsburgh/pittsburgh_3909.jpg" alt="Example Pittsburgh sidewalk segment" />
+            <p>For each Pittsburgh scene, answer whether you could pass through using your mobility aid.</p>
+          </div>
+          <div>
+            <img src="../../data/generalization/images/pittsburgh/pittsburgh_4229.jpg" alt="Example Pittsburgh route scene" />
+            <p>For route pairs, compare the sampled street-view scenes for Route A and Route B.</p>
+          </div>
+        </div>
+        <button class="primary wide" data-action="begin-trials">Begin review</button>
+      </section>
+    </template>
+
+    <template id="imageTrialTemplate">
+      <section class="task">
+        <div class="media-card">
+          <img id="trialImage" alt="" />
+          <button id="zoomButton" class="secondary compact" type="button">Zoom image</button>
+        </div>
+        <div class="task-body">
+          <p class="eyebrow">Image review</p>
+          <h2>Could you pass through this sidewalk segment using your mobility aid?</h2>
+          <p id="trialCaption" class="caption"></p>
+          <div class="response-grid" role="group" aria-label="Passability response">
+            <button data-response="yes">Yes <kbd>1</kbd></button>
+            <button data-response="unsure">Unsure <kbd>2</kbd></button>
+            <button data-response="no">No <kbd>3</kbd></button>
+            <button data-response="skip">Skip <kbd>S</kbd></button>
+          </div>
+          <fieldset>
+            <legend>Optional: what affected your answer?</legend>
+            <div class="chips" data-chip-group="imageReasons">
+              <button type="button" data-value="curb_or_ramp">Curb or ramp issue</button>
+              <button type="button" data-value="surface_or_cracks">Surface or cracks</button>
+              <button type="button" data-value="too_narrow">Too narrow</button>
+              <button type="button" data-value="slope">Slope</button>
+              <button type="button" data-value="obstruction">Obstruction</button>
+              <button type="button" data-value="not_enough_info">Not enough information</button>
+            </div>
+          </fieldset>
+        </div>
+      </section>
+    </template>
+
+    <template id="routeTrialTemplate">
+      <section class="task">
+        <div class="route-grid">
+          <figure id="routeAOption"></figure>
+          <figure id="routeBOption"></figure>
+        </div>
+        <div class="task-body">
+          <p class="eyebrow">Route comparison</p>
+          <h2 id="routePrompt">Which route would you choose?</h2>
+          <div class="response-grid route-buttons" role="group" aria-label="Route preference response">
+            <button data-route-response="route_a">Route A <kbd>1</kbd></button>
+            <button data-route-response="route_b">Route B <kbd>2</kbd></button>
+            <button data-route-response="no_preference">No preference <kbd>3</kbd></button>
+            <button data-route-response="neither">Neither route <kbd>4</kbd></button>
+            <button data-route-response="skip">Skip <kbd>S</kbd></button>
+          </div>
+          <fieldset>
+            <legend>Optional: why?</legend>
+            <div class="chips" data-chip-group="routeReasons">
+              <button type="button" data-value="shorter">Shorter</button>
+              <button type="button" data-value="safer_surface">Safer surface</button>
+              <button type="button" data-value="fewer_crossings">Fewer crossings</button>
+              <button type="button" data-value="avoids_curb_issue">Avoids curb issue</button>
+              <button type="button" data-value="avoids_slope">Avoids slope</button>
+              <button type="button" data-value="more_accessible">Looks more accessible</button>
+              <button type="button" data-value="not_enough_info">Not enough information</button>
+            </div>
+          </fieldset>
+        </div>
+      </section>
+    </template>
+
+    <template id="usabilityTemplate">
+      <section class="panel">
+        <h2>Almost done</h2>
+        <p>Three quick questions about the app.</p>
+        <label class="field">
+          <span>The task was easy to understand.</span>
+          <input id="easeScore" type="range" min="1" max="5" value="4" />
+        </label>
+        <label class="field">
+          <span>The images and routes gave enough information.</span>
+          <input id="infoScore" type="range" min="1" max="5" value="4" />
+        </label>
+        <label class="field">
+          <span>I would be willing to use this kind of tool again.</span>
+          <input id="reuseScore" type="range" min="1" max="5" value="4" />
+        </label>
+        <label class="field">
+          <span>Optional: what made anything hard to answer?</span>
+          <textarea id="freeText" rows="4"></textarea>
+        </label>
+        <button class="primary wide" data-action="finish">Finish</button>
+      </section>
+    </template>
+
+    <template id="doneTemplate">
+      <section class="panel">
+        <h2>Thank you</h2>
+        <p id="doneSummary"></p>
+        <p id="submitStatus" class="submit-status"></p>
+        <div class="button-row">
+          <button class="primary" data-action="download-json">Download JSON</button>
+          <button class="secondary" data-action="download-csv">Download CSV</button>
+          <button class="danger" data-action="reset">Reset this session</button>
+        </div>
+      </section>
+    </template>
+
+    <div id="modal" class="modal" hidden>
+      <button id="closeModal" class="secondary compact" type="button">Close</button>
+      <img id="modalImage" alt="" />
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

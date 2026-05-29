@@ -93,7 +93,7 @@ A shared autonomous vehicle preparing for a curbside drop-off must answer a ques
 \textbf{Perception under irreducible human disagreement.} Two experienced wheelchair users looking at the same image of a cracked, sloped sidewalk may reach opposite conclusions (Fig.~\ref{fig:teaser_a}). This is not annotator noise, as it reflects real variation in physical ability, equipment, and acceptable risk~\citep{DBLP:journals/corr/abs-2502-19888,collins2022elicit}. Treating it as noise, as nearly every prior automated-accessibility work has done~\citep{10.1145/3308561.3353798,o'meara2025rampnet,10.1145/3663548.3688531,hosseini2022citysurfaces} via majority-vote collapsing, discards exactly the signal that a risk-aware planner needs. Modern networks are also known to be systematically overconfident on subjective inputs~\citep{guo2017calibration,minderer2021revisiting,jiang2024crowdcalibrator}. However, a lesson from Peterson et al.~\citep{peterson2019humanuncertainty} on the CIFAR-10H dataset shows how models become more reliable when trained on distributions of human uncertainty rather than rigid binary labels.
 
 % \textbf{Our position.} 
-We treat the empirical vote distribution $[p_{\mathrm{no}}, p_{\mathrm{unsure}}, p_{\mathrm{yes}}]$ over $\{$no, unsure, yes$\}$ as the operational reference signal for risk-aware autonomous mobility services (Fig.~\ref{fig:teaser_b}). With $\approx 190$ independent votes per (image, aid) pair, nearly four times the per-image annotation density of CIFAR-10H~\citep{peterson2019humanuncertainty} and far richer than ImageNet-16H~\citep{steyvers2022bayesian}, each distribution is a statistically reliable empirical estimate of community-level opinion, not a noisy majority vote from three crowd-workers. A frozen vision encoder + per-aid linear probe trained against these distributions by KL divergence produces a calibrated per-aid probability that we drop directly into an OpenStreetMap (OSM)-derived Pittsburgh pedestrian graph as edge cost. The planner solves a single risk-aware Dijkstra and produces five \emph{different} optimal paths for the same origin-destination (OD) pair, one per aid (Fig.~\ref{fig:teaser}c). The metric that matters for this pipeline is calibration (soft Brier score), \emph{not} argmax F1: the planner's edge weight is a linear function of $\hat{p}_\mathrm{yes}$, so an overconfident probe collapses the routing gradient even when argmax accuracy is high.
+We treat the empirical vote distribution $[p_{\mathrm{no}}, p_{\mathrm{unsure}}, p_{\mathrm{yes}}]$ over $\{$no, unsure, yes$\}$ as the operational reference signal for risk-aware autonomous mobility services (Fig.~\ref{fig:teaser_b}). With $\approx 190$ independent votes per (image, aid) pair, nearly four times the per-image annotation density of CIFAR-10H~\citep{peterson2019humanuncertainty} and far richer than ImageNet-16H~\citep{steyvers2022bayesian}, each distribution is a statistically reliable empirical estimate of community-level opinion, not a noisy majority vote from three crowd-workers. A frozen vision encoder + per-aid linear probe trained against these distributions by KL divergence produces a calibrated per-aid probability that we drop directly into an OpenStreetMap (OSM)-derived Pittsburgh pedestrian graph as edge cost. The planner solves a single risk-aware Dijkstra and produces five \emph{different} optimal paths for the same origin-destination (OD) pair, one per aid (Fig.~\ref{fig:teaser}c). The metric that matters for this pipeline is calibration (soft Brier score), \emph{not} argmax F1: the planner's edge weight is a linear function of $\hat{p}_\mathrm{yes}$, so an overconfident probe can achieve high F1 while still collapsing the routing gradient.
 
 
 \textbf{Robot-learning interface.} The module is a learned map-prior layer between candidate drop-off generation and final stop selection, not a replacement for onboard perception. Offline Street-View imagery and Project Sidewalk votes assign per-aid edge priors; at request time, the planner queries the passenger's aid, ranks curb stops by downstream sidewalk confidence, and leaves transient hazards (parked vehicles, snow, construction) to live camera/LiDAR verification. At $78.5$\,ms/image on an A100, DINOv2-large is ${\sim}75\times$ faster than the closest zero-shot VLM.
@@ -131,6 +131,8 @@ $\mathbf{y}_{i,a} = K^{-1}\sum_{k} \mathrm{one\_hot}(v_{k,a}) \in \Delta^2$, an 
 \section{Method}
 \label{sec:method}
 
+A per-aid linear probe on a frozen encoder is trained to match the empirical ternary vote distribution $[p_{\mathrm{no}}, p_{\mathrm{unsure}}, p_{\mathrm{yes}}]$ via KL divergence (Soft-KL) and evaluated against a hard cross-entropy baseline; calibration is measured by soft Brier score under 5-fold panorama-level cross-validation.
+
 \subsection{Linear Probe on Frozen Encoders}
 
 Each image $x_i$ is embedded by a frozen encoder $E$ and L2-normalised: $\mathbf{f}_i = E(x_i)/\|E(x_i)\|_2$. A per-aid linear head produces predictions:
@@ -139,6 +141,7 @@ Each image $x_i$ is embedded by a frozen encoder $E$ and L2-normalised: $\mathbf
 Encoder weights are never updated. We evaluate eight encoders: CLIP ViT-B/32, ViT-B/16, and ViT-L/14~\citep{radford2021learningtransferablevisualmodels}; DINOv2-base and DINOv2-large~\citep{oquab2023dinov2}; SigLIP2-base and SigLIP2-SO400M~\citep{tschannen2025siglip2}; and supervised ViT-B/16 from timm~\citep{dosovitskiy2021an}.
 
 \subsection{Soft-KL Divergence Training}
+\label{sec:method:softkl}
 
 The primary loss minimises the entropy-weighted KL divergence from model output to human vote distribution:
 \begin{equation}
@@ -148,6 +151,7 @@ The primary loss minimises the entropy-weighted KL divergence from model output 
 Unlike knowledge distillation, where soft targets come from a teacher model, the targets here are empirical human distributions backed by $\approx 190$ independent judgments each. The predicted $\hat{\mathbf{y}}_{i,a}$ is directly interpretable as ``the fraction of users in our study who would consider this sidewalk accessible.''
 
 \subsection{Hard Cross-Entropy Baseline}
+\label{sec:method:hardce}
 
 For comparison, we collapse each vote distribution to its argmax label $\hat{c}_{i,a} = \arg\max \mathbf{y}_{i,a}$ and train with standard cross-entropy:
 \begin{equation}
@@ -156,6 +160,7 @@ For comparison, we collapse each vote distribution to its argmax label $\hat{c}_
 The entropy weight is retained so the comparison isolates the effect of the target (distribution vs.\ hard label) rather than the weighting. As a stronger baseline, we also evaluate post-hoc \textbf{temperature-scaled Hard-CE} (20\% calibration split, NLL objective; Appendix~\ref{app:calibration}).
 
 \subsection{Calibration Metric: Soft Brier Score}
+\label{sec:method:brier}
 
 We assess calibration against the human vote distribution:
 \begin{equation}
@@ -248,7 +253,7 @@ All probes use AdamW (lr $= 10^{-3}$, weight decay $= 10^{-4}$, 50 epochs, batch
 
 All numbers below are 5-fold panorama-level CV at seed $42$; $\pm$ values are 95\% CIs over the $40$ (fold, aid) measurements per encoder. The claim is not visual foundation-model learning but whether frozen urban-scene features can be calibrated against dense human vote distributions to produce a probability an autonomous driving planner can consume.
 
-\textbf{Calibration headline.} Table~\ref{tab:results_all} and Fig.~\ref{fig:brier} (Appendix~\ref{app:calibration}) report the primary calibration result alongside argmax F1. Soft-KL achieves a soft Brier score of $0.064$--$0.083$ versus $0.228$--$0.274$ for Hard-CE---a \textbf{$3.2\times$ mean improvement} consistent across every backbone and outside the 95\% CI for all eight pairings. Post-hoc temperature scaling (NLL-tuned per fold; Appendix~\ref{app:calibration}, Table~\ref{tab:temp_scaling}) reduces Hard-CE Brier by ${\approx}34\%$ on average but leaves a $>2\times$ gap vs Soft-KL, confirming the advantage is structural (target encoding) rather than overconfidence alone. At $\beta_c{=}8$, Hard-CE's overconfident edge probabilities collapse the planner's routing gradient; Soft-KL preserves the empirical bimodality and gives the planner a usable continuous risk signal.
+\textbf{Soft-KL vs.\ Hard-CE calibration.} Table~\ref{tab:results_all} and Fig.~\ref{fig:brier} (Appendix~\ref{app:calibration}) report the primary calibration result alongside argmax F1. Soft-KL achieves a soft Brier score of $0.064$--$0.083$ versus $0.228$--$0.274$ for Hard-CE---a \textbf{$3.2\times$ mean improvement} consistent across every backbone and outside the 95\% CI for all eight pairings. Post-hoc temperature scaling (NLL-tuned per fold; Appendix~\ref{app:calibration}, Table~\ref{tab:temp_scaling}) reduces Hard-CE Brier by ${\approx}34\%$ on average but leaves a $>2\times$ gap vs Soft-KL, confirming the advantage is structural (target encoding) rather than overconfidence alone. At $\beta_c{=}8$, Hard-CE's overconfident edge probabilities collapse the planner's routing gradient; Soft-KL preserves the empirical bimodality and gives the planner a usable continuous risk signal.
 
 \begin{table}
 \caption{\textbf{Per-encoder results, Soft-KL (ours) vs.\ Hard-CE baseline.} 5-fold panorama-level CV at seed $42$; $\pm$ is 95\% CI over $40$ fold-aid measurements. Brier $\downarrow$ is measured against human vote distributions; zero-shot VLMs use no task-specific data.}
@@ -281,7 +286,7 @@ Qwen2.5-VL-7B & --   & 0.412 & --   & 0.632 & -- &   522 \\
 \vspace{-8pt}
 \end{table}
 
-\textbf{Why F1.} Hard-CE yields higher argmax F1 in six of eight encoders ($+0.059$ on average) but the gap lies inside the 95\% CI in every case. The asymmetry is structural: no image in the dataset has ``unsure'' as the majority vote, so any probability mass Soft-KL faithfully places there is unrecoverable under argmax F1. The encoder ranking also \emph{inverts} between objectives---DINOv2-large leads Soft-KL while CLIP-B/32 leads Hard-CE---indicating that DINOv2's dense self-supervised features better capture the uncertainty structure of human accessibility judgments while CLIP's contrastive language-image features better predict the plurality label.
+\textbf{Argmax F1 as a secondary metric.} Hard-CE yields higher argmax F1 in six of eight encoders ($+0.059$ on average) but the gap lies inside the 95\% CI in every case. The asymmetry is structural: no image in the dataset has ``unsure'' as the majority vote, so any probability mass Soft-KL faithfully places there is unrecoverable under argmax F1. The encoder ranking also \emph{inverts} between objectives---DINOv2-large leads Soft-KL while CLIP-B/32 leads Hard-CE---indicating that DINOv2's dense self-supervised features better capture the uncertainty structure of human accessibility judgments while CLIP's contrastive language-image features better predict the plurality label.
 
 \textbf{Walking cane: a structural Hard-CE failure preserved by Soft-KL.} Walking cane has a $6.4{:}1$ positive skew ($45/52$ majority-yes). Under Hard-CE, every encoder scores at or below the trivial majority-class baseline of $0.467$, with the best result ($0.513$) only marginally above it; $6/8$ encoders fall \emph{below} the baseline. Soft-KL on DINOv2-large recovers F1 $= 0.640$ ($+42\%$ relative). The mechanism: $5/7$ minority-``no'' walking-cane images have human vote margins $<0.05$ between the top two classes (Appendix~\ref{app:cane}, Fig.~\ref{fig:cane_votes})---near-50/50 splits that Hard-CE coerces into hard negatives, creating contradictory training signal that collapses the model to the majority class. Soft-KL assigns those images targets $\approx[0.45, 0.05, 0.45]$ and preserves the training signal from the two unambiguous ``no'' examples. The robotic-deployment implication is direct: Hard-CE treats near-impassable edges as confidently safe for cane users; Soft-KL flags them as uncertain so the planner routes around them.
 
@@ -299,12 +304,13 @@ The learned per-aid probability $\hat{p}^a_\mathrm{yes}$ is the perception modul
 
 \textbf{Routing objective and miscalibration cost.} For aid $a$, edge $e$ has cost $\ell_e \cdot (1 + \beta_c\,(1 - \hat{p}^a_{\mathrm{yes},e}))$  (pseudocode in Appendix~\ref{app:algo}, Algorithm~\ref{alg:dijkstra}); we use $\beta_c{=}8$ at the inflection of the Pareto sweep (Appendix~\ref{app:pareto}; $\beta_c\in\{1,2,4,8,16\}$ gives mean $\Delta\bar{p}_\mathrm{yes}$ rising from $0.058$ to $0.105$ at $2.0$--$11.3\%$ distance overhead). Replacing Soft-KL scores with Hard-CE scores at the same $\beta_c$ produces structurally different (and uniformly worse on the calibrated metric) routes for all five aids; Hard-CE \emph{overestimates} its own route's $\hat{p}_\mathrm{yes}$ by $+0.055$ to $+0.085$ because of overconfident edge probabilities. A robot planner consuming Hard-CE outputs would therefore select routes with lower model-predicted passability than Soft-KL alternatives (full breakdown in Appendix~\ref{app:routing_viz}, Table~\ref{tab:supp_crosseval}).
 
-\begin{wraptable}{r}{0.45\textwidth}
-\vspace{-10pt}
-\caption{\textbf{Canonical OD pair} ($\beta_c{=}8$). Standard-route $\bar{p}_\mathrm{yes}$: $0.442$ (Man.\ WC) to $0.516$ (Cane).}
-\label{tab:routing_canonical}
+\begin{table*}[t]
 \centering\scriptsize
 \setlength{\tabcolsep}{4pt}
+\begin{minipage}[t]{0.30\linewidth}
+\centering
+\caption{\textbf{Canonical OD pair} ($\beta_c{=}8$). Standard-route $\bar{p}_\mathrm{yes}$: $0.442$ (Man.\ WC) to $0.516$ (Cane).}
+\label{tab:routing_canonical}
 \begin{tabular}{@{}lccc@{}}
 \toprule
 \textbf{Aid} & $\bar{p}^{\mathrm{acc}}_{\mathrm{yes}}$ & $\Delta p_\mathrm{yes}$ & $\Delta\ell$ \\
@@ -316,17 +322,12 @@ Man.\ WC & 0.576 & +0.134 & +19\% \\
 Mot.\ WC & 0.592 & +0.146 & +25\% \\
 \bottomrule
 \end{tabular}
-\vspace{-8pt}
-\end{wraptable}
-
-\textbf{Per-aid routes (canonical OD pair).} Table~\ref{tab:routing_canonical} and Fig.~\ref{fig:teaser}c show the five per-aid paths for one OD pair in the Forbes/Murray corridor: each aid traces a structurally distinct optimal route ($+0.134$ to $+0.155$ mean $\hat{p}_\mathrm{yes}$ at $18$--$25\%$ extra distance). This per-aid diversity is only possible when the planner consumes a real per-edge per-aid probability, not a single binary tag.
-
-\begin{wraptable}{r}{0.50\textwidth}
-\vspace{-10pt}
-\caption{\textbf{vs.\ ORS} on the 40/50 routable Pittsburgh pairs. Ours yields higher mean $\hat{p}_\mathrm{yes}$ on every aid.}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.35\linewidth}
+\centering
+\caption{\textbf{Comparison with ORS} on the 40/50 routable Pittsburgh pairs. Our scoring yields higher mean $\hat{p}_\mathrm{yes}$ on every aid.}
 \label{tab:routing_ors}
-\centering\scriptsize
-\setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lccc@{}}
 \toprule
 \textbf{Aid} & $\bar{p}^{\mathrm{ORS}}_{\mathrm{yes}}$ & $\bar{p}^{\mathrm{ours}}_{\mathrm{yes}}$ & $\Delta$ (95\% CI) \\
@@ -338,16 +339,12 @@ Man.\ WC & 0.519 & \textbf{0.566} & $+0.047\pm0.022$ \\
 Mot.\ WC & 0.545 & \textbf{0.590} & $+0.045\pm0.022$ \\
 \bottomrule
 \end{tabular}
-\vspace{-8pt}
-\end{wraptable}
-\textbf{vs.\ OpenRouteService wheelchair profile.} ORS~\citep{openrouteservice2026wheelchair} is the natural rule-based counterpart---it parses OSM wheelchair tags into edge costs and is the engine downstream AccessMap-style products~\citep{bolten2017accessmap,bolten2019opensidewalks,saha2022mypath} would compose with. On 50 random OD pairs in our graph, ORS fails to return a route for $20\%$ of pairs (insufficient OSM tags; a known coverage failure~\citep{tannert2018wheelchair}). On the 40 routable pairs, our learned per-aid scoring yields a higher mean $\hat{p}_\mathrm{yes}$ on every aid (Table~\ref{tab:routing_ors}; full Std/ORS/Ours breakdown in Appendix~\ref{app:routing_viz}, Table~\ref{tab:supp_ors_full}); paired-difference 95\% CIs are positive for all five aids though wide at $n{=}40$, so we read this as directional evidence at one snapshot. The mechanism is coverage: our scoring populates $91.7\%$ of edges with calibrated probabilities, whereas ORS depends on tags absent on most edges of most cities. \emph{Important caveat:} the route-quality comparison ($\Delta\bar{p}_\mathrm{yes}$ in Table~\ref{tab:routing_ors}) uses our model as the scoring function, so it is not fully independent of our optimisation objective; the planner that maximises model-predicted passability will by construction outscore ORS on that same metric. The unambiguously unbiased finding is the $20\%$ ORS coverage failure, which holds regardless of any quality metric and is the primary claim we make about ORS.
-
-\begin{wraptable}{r}{0.52\textwidth}
-\vspace{-10pt}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.31\linewidth}
+\centering
 \caption{\textbf{Monte Carlo} over $10{,}000$ random OD pairs ($\beta_c{=}8$, seed 42, min 200\,m). $\pm$ are 95\% Wilson CIs.}
 \label{tab:routing_mc}
-\centering\scriptsize
-\setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 \textbf{Aid} & $\overline{\Delta\bar{p}}_\mathrm{yes}$ & Med. & \% impr. & $\overline{\Delta\ell}$ \\
@@ -359,8 +356,14 @@ Man.\ WC & +0.120 & +0.112 & $90.9\pm0.6$ & +9.8\% \\
 Mot.\ WC & +0.116 & +0.110 & $90.8\pm0.6$ & +9.8\% \\
 \bottomrule
 \end{tabular}
-\vspace{-8pt}
-\end{wraptable}
+\end{minipage}
+\vspace{-4pt}
+\end{table*}
+
+\textbf{Per-aid routes (canonical OD pair).} Table~\ref{tab:routing_canonical} and Fig.~\ref{fig:teaser}c show the five per-aid paths for one OD pair in the Forbes/Murray corridor: each aid traces a structurally distinct optimal route ($+0.134$ to $+0.155$ mean $\hat{p}_\mathrm{yes}$ at $18$--$25\%$ extra distance). This per-aid diversity is only possible when the planner consumes a real per-edge per-aid probability, not a single binary tag.
+
+\textbf{Comparison with OpenRouteService wheelchair profile.} ORS~\citep{openrouteservice2026wheelchair} is the natural rule-based counterpart---it parses OSM wheelchair tags into edge costs and is the engine downstream AccessMap-style products~\citep{bolten2017accessmap,bolten2019opensidewalks,saha2022mypath} would compose with. On 50 random OD pairs in our graph, ORS fails to return a route for $20\%$ of pairs (insufficient OSM tags; a known coverage failure~\citep{tannert2018wheelchair}). On the 40 routable pairs, our learned per-aid scoring yields a higher mean $\hat{p}_\mathrm{yes}$ on every aid (Table~\ref{tab:routing_ors}; full Std/ORS/Ours breakdown in Appendix~\ref{app:routing_viz}, Table~\ref{tab:supp_ors_full}); paired-difference 95\% CIs are positive for all five aids though wide at $n{=}40$, so we read this as directional evidence at one snapshot. The mechanism is coverage: our scoring populates $91.7\%$ of edges with calibrated probabilities, whereas ORS depends on tags absent on most edges of most cities. \emph{Important caveat:} the route-quality comparison ($\Delta\bar{p}_\mathrm{yes}$ in Table~\ref{tab:routing_ors}) uses our model as the scoring function, so it is not fully independent of our optimisation objective; the planner that maximises model-predicted passability will by construction outscore ORS on that same metric. The unambiguously unbiased finding is the $20\%$ ORS coverage failure, which holds regardless of any quality metric and is the primary claim we make about ORS.
+
 \textbf{Monte Carlo over $10{,}000$ OD pairs.} To verify generality, we sample $10{,}000$ random OD pairs (min separation $200$\,m, seed $42$) and compare standard vs.\ risk-aware Dijkstra (Table~\ref{tab:routing_mc}; the full P25/P50/P75 distribution and per-aid Pareto scatter are reported in Appendix~\ref{app:pareto}). For every aid, $87.8$--$91.0\%$ of trips have higher model-predicted $\hat{p}_\mathrm{yes}$ under risk-aware Dijkstra at $7.4$--$9.8\%$ mean distance overhead; the median overhead is $4.8$--$6.8\%$, indicating most trips reroute at modest cost. This is the behaviour an autonomous mobility planner needs: a hedge that is rarely large in distance but consistently positive in model-predicted passability.
 
 
@@ -383,7 +386,7 @@ Mot.\ WC & +0.116 & +0.110 & $90.8\pm0.6$ & +9.8\% \\
 
 \textbf{Single routing city, offline evaluation, and evaluation circularity.} Routing uses one Pittsburgh OSM snapshot; the ORS comparison is $n{=}50$ pairs and directional. We have not run a live wheelchair-user study, evaluated transient obstructions or sensor noise, or tested low-power deployment. Because the routing metric is model-predicted $\hat{p}_\mathrm{yes}$, the $87.8$--$91.0\%$ gain shows the planner optimises its objective; proving actual user safety requires held-out Pittsburgh audits, route-preference studies, or physical traversal measurements.
 
-\textbf{Responsible deployment.} The per-aid probability is a community-level prior, not a per-user safety guarantee. A deployed system should use it only for route ranking, verify curbside scenes with onboard sensors~\citep{saha2022mypath}, expose uncertainty, and reject near-chance regions.
+\textbf{Responsible deployment.} The per-aid probability is a community-level prior, not a per-user safety guarantee. A deployed system should use it only for route ranking, verify curbside scenes with onboard sensors~\citep{saha2022mypath}, expose uncertainty, reject near-chance regions, and confirm candidate routes with the passenger before committing to a path.
 
 \section{Conclusion}
 \label{sec:conclusion}

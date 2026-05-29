@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <title>Revisão — Imagens de Rota</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #111; color: #eee; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 24px 16px; }
+    h1 { font-size: 1.1rem; font-weight: 600; margin-bottom: 6px; }
+    .counter { font-size: 0.85rem; color: #aaa; margin-bottom: 16px; }
+    .label { font-size: 0.8rem; color: #ffd; background: #333; padding: 6px 12px; border-radius: 4px; margin-bottom: 12px; text-align: center; max-width: 640px; }
+    img { max-width: 640px; width: 100%; border-radius: 8px; display: block; }
+    .btns { display: flex; gap: 16px; margin-top: 20px; }
+    button { font-size: 1.1rem; padding: 14px 40px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; }
+    .yes { background: #22c55e; color: #000; }
+    .no  { background: #ef4444; color: #fff; }
+    .yes:hover { background: #16a34a; }
+    .no:hover  { background: #b91c1c; }
+    kbd { display: inline-block; background: #444; border-radius: 3px; padding: 1px 6px; font-size: 0.8rem; }
+    .hint { color: #888; font-size: 0.78rem; margin-top: 8px; }
+    #done { display: none; max-width: 640px; width: 100%; }
+    #done h2 { margin-bottom: 12px; }
+    #done pre { background: #1e1e1e; padding: 16px; border-radius: 8px; font-size: 0.75rem; overflow-x: auto; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+
+<div id="review">
+  <h1>Revisão de imagens das rotas</h1>
+  <p class="counter" id="counter"></p>
+  <div class="label" id="imgLabel"></div>
+  <img id="img" src="" alt="" />
+  <div class="btns">
+    <button class="yes" onclick="vote(true)">OK <kbd>S</kbd></button>
+    <button class="no"  onclick="vote(false)">Trocar <kbd>N</kbd></button>
+  </div>
+  <p class="hint">Pressione <kbd>S</kbd> (ok) ou <kbd>N</kbd> (trocar)</p>
+</div>
+
+<div id="done">
+  <h2>Revisão concluída</h2>
+  <p id="summary"></p>
+  <pre id="output"></pre>
+</div>
+
+<script>
+const IMAGES = [
+  { src: "../../apps/accessibility-study/data/images/route_manual_wheelchair_acc_scene1.jpg", label: "Manual Wheelchair — Acessível cena 1", id: "route_manual_wheelchair_acc_scene1" },
+  { src: "../../apps/accessibility-study/data/images/route_manual_wheelchair_acc_scene2.jpg", label: "Manual Wheelchair — Acessível cena 2", id: "route_manual_wheelchair_acc_scene2" },
+  { src: "../../apps/accessibility-study/data/images/route_manual_wheelchair_acc_scene3.jpg", label: "Manual Wheelchair — Acessível cena 3", id: "route_manual_wheelchair_acc_scene3" },
+  { src: "../../apps/accessibility-study/data/images/route_manual_wheelchair_std_scene1.jpg", label: "Manual Wheelchair — Padrão cena 1", id: "route_manual_wheelchair_std_scene1" },
+  { src: "../../apps/accessibility-study/data/images/route_manual_wheelchair_std_scene2.jpg", label: "Manual Wheelchair — Padrão cena 2", id: "route_manual_wheelchair_std_scene2" },
+  { src: "../../apps/accessibility-study/data/images/route_manual_wheelchair_std_scene3.jpg", label: "Manual Wheelchair — Padrão cena 3", id: "route_manual_wheelchair_std_scene3" },
+  { src: "../../apps/accessibility-study/data/images/route_mobility_scooter_acc_scene1.jpg", label: "Mobility Scooter — Acessível cena 1", id: "route_mobility_scooter_acc_scene1" },
+  { src: "../../apps/accessibility-study/data/images/route_mobility_scooter_acc_scene2.jpg", label: "Mobility Scooter — Acessível cena 2", id: "route_mobility_scooter_acc_scene2" },
+  { src: "../../apps/accessibility-study/data/images/route_mobility_scooter_acc_scene3.jpg", label: "Mobility Scooter — Acessível cena 3", id: "route_mobility_scooter_acc_scene3" },
+  { src: "../../apps/accessibility-study/data/images/route_mobility_scooter_std_scene1.jpg", label: "Mobility Scooter — Padrão cena 1", id: "route_mobility_scooter_std_scene1" },
+  { src: "../../apps/accessibility-study/data/images/route_mobility_scooter_std_scene2.jpg", label: "Mobility Scooter — Padrão cena 2", id: "route_mobility_scooter_std_scene2" },
+  { src: "../../apps/accessibility-study/data/images/route_mobility_scooter_std_scene3.jpg", label: "Mobility Scooter — Padrão cena 3", id: "route_mobility_scooter_std_scene3" },
+  { src: "../../apps/accessibility-study/data/images/route_motorized_wheelchair_acc_scene1.jpg", label: "Motorized Wheelchair — Acessível cena 1", id: "route_motorized_wheelchair_acc_scene1" },
+  { src: "../../apps/accessibility-study/data/images/route_motorized_wheelchair_acc_scene2.jpg", label: "Motorized Wheelchair — Acessível cena 2", id: "route_motorized_wheelchair_acc_scene2" },
+  { src: "../../apps/accessibility-study/data/images/route_motorized_wheelchair_acc_scene3.jpg", label: "Motorized Wheelchair — Acessível cena 3", id: "route_motorized_wheelchair_acc_scene3" },
+  { src: "../../apps/accessibility-study/data/images/route_motorized_wheelchair_std_scene1.jpg", label: "Motorized Wheelchair — Padrão cena 1", id: "route_motorized_wheelchair_std_scene1" },
+  { src: "../../apps/accessibility-study/data/images/route_motorized_wheelchair_std_scene2.jpg", label: "Motorized Wheelchair — Padrão cena 2", id: "route_motorized_wheelchair_std_scene2" },
+  { src: "../../apps/accessibility-study/data/images/route_motorized_wheelchair_std_scene3.jpg", label: "Motorized Wheelchair — Padrão cena 3", id: "route_motorized_wheelchair_std_scene3" },
+  { src: "../../apps/accessibility-study/data/images/route_walker_acc_scene1.jpg", label: "Walker — Acessível cena 1", id: "route_walker_acc_scene1" },
+  { src: "../../apps/accessibility-study/data/images/route_walker_acc_scene2.jpg", label: "Walker — Acessível cena 2", id: "route_walker_acc_scene2" },
+  { src: "../../apps/accessibility-study/data/images/route_walker_acc_scene3.jpg", label: "Walker — Acessível cena 3", id: "route_walker_acc_scene3" },
+  { src: "../../apps/accessibility-study/data/images/route_walker_std_scene1.jpg", label: "Walker — Padrão cena 1", id: "route_walker_std_scene1" },
+  { src: "../../apps/accessibility-study/data/images/route_walker_std_scene2.jpg", label: "Walker — Padrão cena 2", id: "route_walker_std_scene2" },
+  { src: "../../apps/accessibility-study/data/images/route_walker_std_scene3.jpg", label: "Walker — Padrão cena 3", id: "route_walker_std_scene3" },
+  { src: "../../apps/accessibility-study/data/images/route_walking_cane_acc_scene1.jpg", label: "Walking Cane — Acessível cena 1", id: "route_walking_cane_acc_scene1" },
+  { src: "../../apps/accessibility-study/data/images/route_walking_cane_acc_scene2.jpg", label: "Walking Cane — Acessível cena 2", id: "route_walking_cane_acc_scene2" },
+  { src: "../../apps/accessibility-study/data/images/route_walking_cane_acc_scene3.jpg", label: "Walking Cane — Acessível cena 3", id: "route_walking_cane_acc_scene3" },
+  { src: "../../apps/accessibility-study/data/images/route_walking_cane_std_scene1.jpg", label: "Walking Cane — Padrão cena 1", id: "route_walking_cane_std_scene1" },
+  { src: "../../apps/accessibility-study/data/images/route_walking_cane_std_scene2.jpg", label: "Walking Cane — Padrão cena 2", id: "route_walking_cane_std_scene2" },
+  { src: "../../apps/accessibility-study/data/images/route_walking_cane_std_scene3.jpg", label: "Walking Cane — Padrão cena 3", id: "route_walking_cane_std_scene3" },
+];
+
+let idx = 0;
+const results = [];
+
+function show() {
+  document.getElementById('counter').textContent = `${idx + 1} / ${IMAGES.length}`;
+  document.getElementById('imgLabel').textContent = IMAGES[idx].label;
+  document.getElementById('img').src = IMAGES[idx].src;
+}
+
+function vote(ok) {
+  results.push({ id: IMAGES[idx].id, label: IMAGES[idx].label, ok });
+  idx++;
+  if (idx >= IMAGES.length) finish();
+  else show();
+}
+
+function finish() {
+  document.getElementById('review').style.display = 'none';
+  document.getElementById('done').style.display = 'block';
+  const bad = results.filter(r => !r.ok);
+  document.getElementById('summary').textContent =
+    `${bad.length} imagens para trocar de ${results.length} total.`;
+  const lines = results.map(r =>
+    `${r.ok ? 'OK    ' : 'TROCAR'} ${r.id.padEnd(45)} ${r.label}`
+  );
+  document.getElementById('output').textContent = lines.join('\n');
+}
+
+document.addEventListener('keydown', e => {
+  if (idx >= IMAGES.length) return;
+  if (e.key === 's' || e.key === 'S') vote(true);
+  if (e.key === 'n' || e.key === 'N') vote(false);
+});
+
+show();
+</script>
+</body>
+</html>

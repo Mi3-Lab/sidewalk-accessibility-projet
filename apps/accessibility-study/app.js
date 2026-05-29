@@ -142,14 +142,22 @@ function recordImageResponse(trial, response) {
   render();
 }
 
+function activeRouteTrials() {
+  const aid = state.profile && state.profile.primary_aid;
+  if (!aid) return trials.routeTrials;
+  const perAid = trials.routeTrials.filter(t => !t.aid || t.aid === aid);
+  return perAid.length > 0 ? perAid : trials.routeTrials;
+}
+
 function renderRouteTrial() {
-  if (state.currentRouteIndex >= trials.routeTrials.length) {
+  const routeTrials = activeRouteTrials();
+  if (state.currentRouteIndex >= routeTrials.length) {
     state.step = "usability";
     return render();
   }
   app.innerHTML = "";
   app.append(document.querySelector("#routeTrialTemplate").content.cloneNode(true));
-  const trial = trials.routeTrials[state.currentRouteIndex];
+  const trial = routeTrials[state.currentRouteIndex];
   app.querySelector("#routePrompt").textContent = trial.prompt;
   renderRouteOption(app.querySelector("#routeAOption"), trial.routeA);
   renderRouteOption(app.querySelector("#routeBOption"), trial.routeB);
@@ -343,7 +351,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 function updateProgress() {
-  const totalTasks = trials.imageTrials.length + trials.routeTrials.length;
+  const totalTasks = trials.imageTrials.length + activeRouteTrials().length;
   const completed = Math.min(state.imageResponses.length + state.routeResponses.length, totalTasks);
   if (state.step === "consent" || state.step === "profile" || state.step === "tutorial") {
     progressText.textContent = "Setup";

@@ -27,6 +27,30 @@ recurring objections:
 Reviewer M7xg additionally asked for repeated cross-validation with different seeds,
 which is exactly what §3.1 delivers.
 
+## 1b. Verdict on every claim in the paper
+
+Everything below was re-measured over 10 seeds. This table is the short version; the
+sections named in the last column carry the numbers.
+
+| claim as published | verdict | where |
+|---|---|---|
+| 3.2× calibration improvement from Soft-KL | **artefact of an untuned hyperparameter.** Reproduces at the paper's `weight_decay=1e-4` (3.09×), but the ratio is a function of that free parameter: 3.92× down to 0.86× — Hard-CE winning — across the grid. **Tuned per method it is 1.50×** | §3.9 |
+| soft Brier 0.076 | under-reports the method by half: **0.0376 achievable** with tuned regularisation | §3.9 |
+| DINOv2-large leads Soft-KL (F1 0.613) | **does not replicate.** 0.475 ± 0.054 over 10 seeds, the *worst* of eight encoders; seed 42 was the best of ten draws | §3.1 |
+| encoder ranking inverts between objectives | **does not replicate.** Top encoders are statistically tied (paired difference 0.0005 ± 0.0150) | §3.1 |
+| walking cane +42% relative F1 | **does not replicate.** Rests on the same seed-42 draw | §3.1 |
+| Hard-CE below trivial baseline on 6/8 encoders (cane) | **5/8** over 10 seeds | §3.1 |
+| temperature scaling cuts Hard-CE Brier ~34%, gap stays >2× | **replicates** — 34.7% and 2.12× | §3.6 |
+| routing improves 87.8–91.0% of trips | **reproduces exactly**, and survives an encoder swap (89.3–90.7%) | §3.5b |
+| 91.7% edge coverage from real predictions | **confirmed**; the headline routing numbers do come from that file | §3.5b |
+| geographic transfer, Zurich +11.6pp over chance | **does not survive an encoder swap** — all five cities fall to chance | §3.11 |
+| model learns human uncertainty structure | entropy correlation **0.051**, and Hard-CE scores higher (0.133) | §3.10 |
+| 829 mobility-aid users | **correct and verifiable**, though it is two collection waves (135 + 694), which the paper should say | §2, §2b |
+| YOLOv12-seg area-ratio filter | **not reproducible from a clone** — the checkpoint is a 134-byte LFS pointer | §3.12 |
+
+Two claims survive intact (temperature scaling, routing), one survives with a corrected
+number (829 users), and the rest need rewriting or removal.
+
 ---
 
 ## 2. Data provenance — the 829 vs 163 question · **DONE**
@@ -524,6 +548,285 @@ in flight. Those are the numbers that can go in the paper.
 reimplementation: one optimiser over all five probes, plain KFold, loss averaged over 260 rows
 rather than five separate 52-row fits with StratifiedKFold. Deltas are trustworthy *within*
 the harness; anything quoted externally has to come from the real pipeline.
+
+## 3.9 The 3.2× is an artefact of an untuned hyperparameter · **DONE**
+
+This is the most consequential result of the whole review, and it supersedes §3.8c.
+
+`PROBE_WD = 1e-4` on a d→3 map fit to 52 points is close to no regularisation, and it was
+never tuned. Sweeping it over 12 values, 10 seeds each:
+
+| weight decay | Soft-KL | Hard-CE | ratio |
+|---|---:|---:|---:|
+| **1e-4 (the paper's)** | 0.0828 | 0.2616 | **3.16×** |
+| 1e-2 | 0.0536 | 0.2350 | 4.38× |
+| 3e-2 | 0.0425 | 0.1896 | 4.46× |
+| **3e-1 (best for Soft-KL)** | **0.0372** | 0.1074 | 2.88× |
+| 1e0 | 0.0392 | 0.0732 | 1.87× |
+| **1e1 (best for Hard-CE)** | 0.0659 | **0.0515** | 0.78× |
+| 1e2 | 0.1032 | 0.0976 | 0.95× |
+
+**The ratio is a function of the regularisation strength, which is a free parameter.**
+Anywhere from 4.46× to 0.78× — Hard-CE winning — is reachable by moving one number the paper
+never tuned. A reviewer with an afternoon and a sweep can produce whichever answer they like.
+
+**Confirmed in the real pipeline** (`crossval.py`, all 8 encoders, 10 seeds, full grid) — these
+are the numbers to quote, not the harness's:
+
+| weight decay | Soft-KL | Hard-CE | ratio |
+|---|---:|---:|---:|
+| **1e-4 (the paper's)** | 0.0808 | 0.2497 | **3.09×** |
+| 3e-1 | 0.0412 | 0.1617 | 3.92× |
+| **3e0 (best Soft-KL)** | **0.0376** | 0.0973 | 2.59× |
+| 1e1 | 0.0412 | 0.0766 | 1.86× |
+| 3e1 | 0.0488 | 0.0596 | 1.22× |
+| **1e2 (best Hard-CE)** | 0.0657 | **0.0564** | **0.86×** |
+
+> **Fair ratio in the real pipeline: 1.50×** (0.0564 / 0.0376), against 3.2× published.
+
+Caveat: Hard-CE's optimum sits at the grid edge (1e2), so the fair ratio could be marginally
+lower still; the 3e1→1e2 gain is already small (0.0596→0.0564), so 1.50× is likely close to
+final.
+
+The same experiment in the coupled-probe harness gave fair ratios of 1.38×, 1.40× and 1.28×
+on three encoders — consistent with the real pipeline despite a different training loop,
+which is reassurance that the effect is not an artefact of either implementation.
+
+Three consequences:
+
+1. **Soft-KL's advantage is real but ~1.4×, not 3.2×.** It survives proper tuning, which the
+   3.2× does not. A defensible 1.4× is worth more than a 3.2× that collapses under scrutiny.
+2. **The two optima sit 30× apart** (3e-1 vs 1e1), so any single shared setting is unfair to
+   one method, and 1e-4 is close to the worst case for Hard-CE — whose error at that setting
+   is dominated by overconfidence that L2 shrinkage would have fixed.
+3. **The paper under-reports its own method by half.** Best achievable Soft-KL Brier is 0.0372
+   against 0.076 published.
+
+The low-rank bottleneck (§3.8b) is subsumed: plain L2 at 3e-1 (0.0372) beats the best
+bottleneck result (0.0398), so no architectural change is warranted.
+
+## 3.10 Entropy correlation: the model does not track disagreement · **DONE**
+
+Added `entropy_correlation` to `crossval.py` (Pearson r between predicted and human vote
+entropy, the metric the current soft-label literature leads with). Across 8 encoders,
+10 seeds:
+
+| | Soft-KL | Hard-CE |
+|---|---:|---:|
+| rank 0 | **0.051** | 0.133 |
+| rank 32 | 0.094 | 0.119 |
+
+Literature reference for soft-label training: r ≈ 0.643.
+
+Two problems. The correlation is near zero in absolute terms, and **Hard-CE tracks item-level
+disagreement better than Soft-KL** — the opposite of the paper's thesis.
+
+Checked whether the dataset simply has no headroom: human entropy is uniformly high and
+narrow (mean 0.847 normalised, IQR 0.805–0.923, no easy items, unlike CIFAR-10H), but
+sampling noise is small (0.0335 vs between-item spread 0.103, reliability 0.90). So there
+*was* signal to track and the model does not track it. This should be reported as a limitation
+rather than left for a reviewer to find.
+
+## 3.11 Geographic transfer does not survive an encoder swap · **DONE**
+
+Re-running the 5-city transfer evaluation under SigLIP2-SO400M:
+
+| city | DINOv2-large (published) | SigLIP2-SO400M |
+|---|---:|---:|
+| Zurich | 0.616 | 0.508 |
+| Detroit | 0.570 | 0.469 |
+| Pittsburgh | 0.566 | 0.517 |
+| Taipei | 0.518 | 0.500 |
+| LA | 0.507 | 0.531 |
+
+Every city drops to chance. Unlike the routing result, which survived the same swap, this
+claim is encoder-dependent and does not hold.
+
+## 3.12 A hypothesis that explains both failures, and a fix under test · **RUNNING**
+
+The probe receives one globally pooled vector per image. Measured on the training set, the
+walkable surface covers only **0.45** of each image, so more than half the probe's input is
+sky, buildings, vehicles and vegetation. That would explain both §3.10 and §3.11: a model
+keying on scene appearance transfers badly across cities (Zurich does not look like Taipei)
+and has no reason to know which surfaces are contested.
+
+`src/models/masked_features.py` pools encoder patch tokens over the walkable region only,
+using an off-the-shelf Cityscapes SegFormer. Both variants are written to one file and
+`crossval.py` takes `--features_npz/--feature_key`, so whole-image and mask-pooled runs
+differ in nothing but what the probe sees.
+
+Note: the repo's own segmentation checkpoint cannot be used — `checkpoints/yolo/bestv12.pt`
+is a 134-byte Git LFS pointer, not the 380 MB model, and git-lfs is not installed. The
+segmentation filter described in the paper's method is **not reproducible from a clone**.
+A public segmenter is the better dependency anyway.
+
+**Result: null in-domain, and inconsistent across encoders.**
+
+| encoder | features | Brier | F1 | H-corr |
+|---|---|---:|---:|---:|
+| dinov2-large | whole | 0.0766 | 0.514 | 0.064 |
+| dinov2-large | masked | 0.0776 | **0.532** | **0.106** |
+| clip-vit-l14 | whole | 0.0792 | **0.526** | 0.085 |
+| clip-vit-l14 | masked | 0.0859 | 0.501 | 0.085 |
+
+Masking helps DINOv2 slightly on F1 and entropy correlation and hurts CLIP-L/14 on both.
+Brier moves within noise either way. So restricting the probe to the walkable surface does
+not help when train and test come from the same cities — which is defensible: scene context
+is legitimately informative in-distribution.
+
+The hypothesis was about *transfer*, so the honest test is leave-one-city-out
+(`src/models/leave_one_city.py`): the 52 panoramas span nine cities, each fold holds one out
+entirely, scored on the real soft labels rather than the binary CurbRamp proxy. Running.
+Expectations should be low given the in-domain inconsistency.
+
+## 3.12b The pattern across every idea tried
+
+| idea | verdict |
+|---|---|
+| cross-aid coupling (r = 0.886) | null — the control showed it was capacity, not sharing |
+| count-based losses (multinomial, Dirichlet-multinomial) | null — ≤0.003, sign inconsistent |
+| low-rank bottleneck | subsumed — plain L2 does better |
+| semi-supervised pseudo-labelling | null — structural, self-training on a linear head is a no-op |
+| sidewalk mask pooling | null in-domain, inconsistent across encoders |
+| **tuned weight decay** | **real and large** — halves Brier, but dismantles the 3.2× |
+
+Five of six are null. That is not bad luck: with 52 items and a binomial CI of ±0.068 on the
+training target itself, almost any apparent gain is within noise until a control rules the
+alternatives out. **Every time an apparent gain was tested against a proper control, it
+shrank or disappeared** — including the paper's own headline.
+
+This is the argument for the reality-check framing in §3.13. The defensible contribution is
+not a better method; it is a rigorous demonstration that in this regime most reported gains
+do not survive controls, with a dataset dense enough to measure that properly.
+
+## 3.13 A framing that turns the bad news into the paper · **PROPOSED**
+
+Most of the paper's claims did not survive (§3.9–3.11). Rather than patch them, there is a
+framing in which those findings *are* the contribution, with a proven precedent at a top
+venue.
+
+**The precedent.** *A Metric Learning Reality Check* (Musgrave, Belongie, Lim, ECCV 2020)
+took a field that had "consistently claimed great advances, often more than doubling the
+performance of decade-old methods", found the improvements were "marginal at best" once
+evaluation was made fair, and was accepted on exactly that. Our §3.9 is the same shape: a
+claimed 3.2× that becomes 1.4× when each method is tuned at its own optimum.
+
+**Why it is not enough on its own.** Musgrave et al. audited a whole field across many
+papers. We would have one paper — our own — and one task. Too narrow for CVPR.
+
+**What closes the gap.** Test whether the finding holds on the benchmark the soft-label
+literature is actually built on. CIFAR-10H is public and directly downloadable
+(`cifar10h-counts.npy`, 10000×10 raw counts). If the soft-label advantage there also shrinks
+under per-method regularisation tuning, this stops being a self-correction and becomes a
+field-level result: *how much of the soft-label advantage survives fair tuning?*
+
+`src/models/cifar10h_check.py` runs exactly the sidewalk protocol on CIFAR-10H: frozen
+encoder, linear probe, Soft-KL vs Hard-CE, weight-decay sweep, repeated seeds, soft Brier and
+entropy correlation.
+
+**And the dataset turns out to occupy an unexplored regime**, which is a second contribution
+and explains our own negative entropy-correlation result:
+
+| | CIFAR-10H | this dataset |
+|---|---:|---:|
+| annotations per item | ~51 | **~190** |
+| mean normalised entropy | **0.067** | **0.847** |
+| IQR | 0.000–0.084 | 0.805–0.923 |
+| items at total consensus | **4393 / 10000** | **none** |
+
+CIFAR-10H is mostly easy with a minority of ambiguous items, so entropy has enormous dynamic
+range — which is why entropy correlation reaches 0.64 there and 0.05 here. Existing
+soft-label results are substantially about learning an easy/hard axis. This dataset removes
+that axis: everything is contested. The scientific question becomes *do soft labels still
+help when nothing is easy?* — which the literature has not asked.
+
+**The paper this supports:**
+1. A benchmark in a regime no existing human-uncertainty dataset covers (densest annotation,
+   uniformly high disagreement, five coupled conditions per item).
+2. A reality check: the soft-label calibration advantage is substantially a hyperparameter
+   artefact, replicated on a public benchmark, with the fair number reported.
+3. A characterisation of *when* soft labels help, with the routing result as the case where
+   the calibrated output demonstrably matters downstream.
+
+Every part is built from work already done. Nothing here requires new annotation.
+
+## 3.14 Calibration does not reach the planner · **DONE** — and this one is positive
+
+The paper argues calibration is the operative metric *because* the routing objective is
+linear in p_yes. Tested directly: score the same 2000 OD pairs twice, once with Soft-KL edge
+scores and once with Hard-CE, and measure how much the resulting routes differ.
+
+Edge scoring was first extended to keep the full `[p_no, p_unsure, p_yes]` (it previously
+stored p_yes alone, discarding two thirds of the model output before the planner saw it).
+The two score files differ on exactly the 1387 inference edges — e.g. walking cane
+`[0.264, 0.090, 0.646]` under Soft-KL against `[0.019, 0.000, 0.981]` under Hard-CE — while
+the 1231 PS-label and prior edges are shared, so any divergence is attributable to the model.
+
+| objective | Jaccard, Soft-KL vs Hard-CE routes | identical routes |
+|---|---:|---:|
+| **linear (the paper's)** | **1.0000** | **100%** |
+| bottleneck (tail-sensitive) | 0.5688 | 29.1% |
+
+**Swapping a well-calibrated model (Brier 0.08) for one 3× worse (0.25) produces literally
+identical routes** under the paper's objective, across 2000 OD pairs × 5 aids.
+
+Controls confirm the harness is sound, and expose a flaw in two of the four objectives:
+
+| control, same score file | Jaccard | identical |
+|---|---:|---:|
+| linear vs distance-only | 0.30 | 5.5% |
+| linear vs bottleneck | 0.21 | 5.2% |
+| linear vs logbarrier | 0.99 | 97.5% |
+| linear vs risk_split | 1.00 | 100% |
+
+Accessibility scores clearly do change routes (0.30 against plain shortest path), so the
+setup measures something. But `logbarrier` is a monotone transform of p_yes, and `risk_split`
+collapses to the linear form on the 47% of edges without a real distribution, because the
+fallback derives p_no and p_unsure from p_yes — reproducing `length·(1 + 9.75(1−p))`. Those
+two are not valid tests as parameterised; that is a design error, not a result. Only
+`bottleneck`, which depends on the worst edge's p_no, is a genuinely different objective.
+
+**The conclusion, and why it is good news.** The paper's causal story is backwards: the
+objective is linear in p_yes, and *that is precisely why* calibration quality cannot affect
+the route. A tail-sensitive objective does distinguish the two models (29% identical), so
+calibration can matter — but only under an objective that consumes the distribution rather
+than its mean. This is a concrete, actionable fix rather than another null, and it answers
+reviewer M7xg's complaint that the edge cost was hand-designed and never compared against a
+risk-sensitive alternative.
+
+## 3.15 CIFAR-10H: the soft-label advantage scales with actual disagreement · **DONE**
+
+Ran the identical protocol on CIFAR-10H (frozen CLIP-B/32, linear probe, weight-decay sweep,
+5 seeds, 4000 images).
+
+| weight decay | Soft-KL | Hard-CE | ratio |
+|---|---:|---:|---:|
+| 1e-4 | 0.0932 | **0.0916** | 0.98× |
+| 1e-2 | 0.0934 | 0.0917 | 0.98× |
+| 1e0 | 0.1790 | 0.1699 | 0.95× |
+
+No soft-label advantage at any setting.
+
+**This must not be reported as a field-level refutation.** The setup does not replicate the
+literature: Peterson et al. trained full networks and measured generalisation and adversarial
+robustness; this is a linear probe on frozen features scored by soft Brier. Different
+question.
+
+What it does establish is a clean relationship worth reporting:
+
+| dataset | mean human entropy | fair ratio |
+|---|---:|---:|
+| CIFAR-10H | 0.067 | 0.98× (none) |
+| this dataset | 0.847 | 1.50× |
+
+On CIFAR-10H, 4393 of 10000 items sit at total consensus and the soft labels are effectively
+one-hot, so the two losses receive near-identical targets and produce near-identical models.
+There was no advantage to shrink. **The soft-label advantage scales with how much genuine
+disagreement the data contains** — which reframes 1.50× on a maximally-contested dataset as
+plausibly near the ceiling of what soft labels deliver, not as a weak result.
+
+It also sharpens the novelty claim: this dataset is the regime where the question is even
+well-posed.
 
 ## 4. Paper changes · **HELD** (deliberately, until experiments finish)
 

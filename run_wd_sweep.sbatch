@@ -20,6 +20,12 @@
 # hyperparameter, not a new head — and, more seriously, the paper's whole
 # 8-encoder comparison was run at an under-regularised operating point.
 #
+# Extended range: the first sweep showed the Soft-KL vs Hard-CE ratio is itself a
+# function of weight decay (3.16x at the paper's 1e-4, 4.38x at 1e-2, 1.87x at 1e0,
+# and 0.78x — Hard-CE winning — at 1e1). Hard-CE's own optimum had not been
+# bracketed, so the fair tuned-vs-tuned comparison could not be stated. This range
+# brackets both.
+#
 # Submit:
 #   sbatch --partition=gpu --export=ALL,ENCODER=dinov2-large run_wd_sweep.sbatch
 
@@ -44,7 +50,7 @@ echo " node $(hostname)  job ${SLURM_JOB_ID:-none}  $(date)"
 echo "========================================="
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader || true
 
-for wd in 1e-4 1e-3 1e-2 1e-1 1e0 1e1; do
+for wd in 1e-4 1e-3 1e-2 3e-2 1e-1 3e-1 1e0 3e0 1e1 3e1 1e2 1e3; do
     echo ""
     echo ">>> [weight_decay=$wd] $(date +%H:%M:%S)"
     mkdir -p "$OUTROOT/wd$wd"

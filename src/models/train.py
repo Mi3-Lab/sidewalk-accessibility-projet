@@ -257,6 +257,7 @@ def train_probe_soft(
     device: torch.device,
     seed: int = RANDOM_STATE,
     rank: int = 0,
+    weight_decay: float = PROBE_WD,
 ) -> nn.Module:
     """
     Train linear probe with KL-divergence loss on the full human vote distribution.
@@ -272,7 +273,7 @@ def train_probe_soft(
     """
     set_seed(seed)
     probe = build_probe(feature_dim, device, rank)
-    optimizer = optim.Adam(probe.parameters(), lr=PROBE_LR, weight_decay=PROBE_WD)
+    optimizer = optim.Adam(probe.parameters(), lr=PROBE_LR, weight_decay=weight_decay)
 
     X_t = torch.tensor(X_train, dtype=torch.float32).to(device)
     y_t = torch.tensor(y_soft,  dtype=torch.float32).to(device)   # (N, 3)
@@ -299,6 +300,7 @@ def train_probe_hard(
     device: torch.device,
     seed: int = RANDOM_STATE,
     rank: int = 0,
+    weight_decay: float = PROBE_WD,
 ) -> nn.Module:
     """
     Train linear probe with cross-entropy loss on argmax hard labels.
@@ -306,7 +308,7 @@ def train_probe_hard(
     """
     set_seed(seed)
     probe = build_probe(feature_dim, device, rank)
-    optimizer = optim.Adam(probe.parameters(), lr=PROBE_LR, weight_decay=PROBE_WD)
+    optimizer = optim.Adam(probe.parameters(), lr=PROBE_LR, weight_decay=weight_decay)
     criterion = nn.CrossEntropyLoss(reduction="none")
 
     X_t = torch.tensor(X_train, dtype=torch.float32).to(device)

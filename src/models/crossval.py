@@ -72,6 +72,22 @@ from train import (
 
 # ── Frozen-encoder feature cache ──────────────────────────────────────────────
 
+def load_feature_npz(npz_path: str, key: str) -> dict:
+    """Load precomputed features (see masked_features.py) as {path: vector}.
+
+    Lets the same folds be run over whole-image and sidewalk-masked features
+    without re-encoding, so the only thing that differs is what the probe sees.
+    """
+    data = np.load(npz_path, allow_pickle=True)
+    if key not in data:
+        raise SystemExit(f"{npz_path} has no array '{key}' (has {list(data.keys())})")
+    vecs = data[key]
+    cache = {}
+    for k, v in zip(data["keys"], vecs):
+        cache[str(Path(str(k)).resolve())] = v
+    return cache
+
+
 def build_feature_cache(
     model, processor, device: torch.device, paths: list, enc_type: str
 ) -> dict:
@@ -89,8 +105,18 @@ def build_feature_cache(
 
 
 def _features_for(paths: list, feat_cache: dict) -> np.ndarray:
-    """Look up cached features for paths, preserving their order."""
-    return np.stack([feat_cache[str(p)] for p in paths])
+    """Look up cached features for paths, preserving their order.
+
+    Falls back to the resolved absolute path so a cache built elsewhere (e.g. a
+    precomputed .npz) matches regardless of how the path was spelled.
+    """
+    out = []
+    for p in paths:
+        key = str(p)
+        if key not in feat_cache:
+            key = str(Path(str(p)).resolve())
+        out.append(feat_cache[key])
+    return np.stack(out)
 
 
 # ── Linear probe helpers ──────────────────────────────────────────────────────
@@ -199,6 +225,7 @@ def crossval_aid(
     seed: int = RANDOM_STATE,
     feat_cache: dict | None = None,
     rank: int = 0,
+    weight_decay: float = PROBE_WD,
 ) -> dict:
     """
     Run n_folds CV for a single mobility aid.
@@ -270,13 +297,13 @@ def crossval_aid(
             y_soft = tr_df[SOFT_COLS].values.astype(np.float32)
             probe  = train_probe_soft(
                 X_train, y_soft, w_train, X_train.shape[1], probe_device,
-                seed=seed, rank=rank,
+                seed=seed, rank=rank, weight_decay=weight_decay,
             )
         else:
             y_train = tr_df["label_int"].values
             probe   = train_probe_hard(
                 X_train, y_train, w_train, X_train.shape[1], probe_device,
-                seed=seed, rank=rank,
+                seed=seed, rank=rank, weight_decay=weight_decay,
             )
 
         y_prob = predict_proba(probe, X_test, probe_device)   # (N, 3) softmax
@@ -375,6 +402,22 @@ def main() -> None:
         help="First seed for the fold partition and probe init.",
     )
     parser.add_argument(
+        "--weight_decay", type=float, default=PROBE_WD,
+        help="L2 on the probe. The pipeline default of 1e-4 is close to no "
+             "regularisation for a d->3 map fit to 52 points; sweeps put the "
+             "Soft-KL optimum near 3e-1 and the Hard-CE optimum near 1e1.",
+    )
+    parser.add_argument(
+        "--features_npz", default="",
+        help="Use precomputed features from masked_features.py instead of "
+             "encoding here. Lets whole-image and sidewalk-masked features be "
+             "compared on identical folds.",
+    )
+    parser.add_argument(
+        "--feature_key", default="masked", choices=["masked", "whole"],
+        help="Which array to read from --features_npz.",
+    )
+    parser.add_argument(
         "--rank", type=int, default=0,
         help="Low-rank bottleneck for the probe (0 = the original full-rank d->3 "
              "map used for every published number). A rank of 16-64 cuts soft "
@@ -416,9 +459,13 @@ def main() -> None:
 
     # ── Encode every unique image once, reuse across folds/seeds/aids ────────
     t_cache = time.perf_counter()
-    feat_cache = build_feature_cache(
-        model, processor, device, tallies["path"].tolist(), enc_type
-    )
+    if args.features_npz:
+        feat_cache = load_feature_npz(args.features_npz, args.feature_key)
+        print(f"Loaded '{args.feature_key}' features from {args.features_npz}")
+    else:
+        feat_cache = build_feature_cache(
+            model, processor, device, tallies["path"].tolist(), enc_type
+        )
     print(
         f"Feature cache: {len(feat_cache)} unique images encoded "
         f"in {time.perf_counter() - t_cache:.1f}s\n"
@@ -433,10 +480,12 @@ def main() -> None:
         "n_folds":      args.n_folds,
         "lr":           PROBE_LR,
         "epochs":       PROBE_EPOCHS,
-        "weight_decay": PROBE_WD,
         "random_state": args.seed,
         "seeds":        seeds,
         "rank":         args.rank,
+        "weight_decay": args.weight_decay,
+        "features_npz": args.features_npz,
+        "feature_key":  args.feature_key if args.features_npz else "encoder",
     }
 
 
@@ -476,6 +525,7 @@ def main() -> None:
                 model, processor, device,
                 df_aid, aid, enc_type, args.n_folds, args.loss_type,
                 seed=seed, feat_cache=feat_cache, rank=args.rank,
+                weight_decay=args.weight_decay,
             )
             if summary:
                 seed_results["aids"][aid] = summary

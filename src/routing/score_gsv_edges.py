@@ -141,6 +141,10 @@ def main():
     parser.add_argument("--sleep_ms",   type=int, default=60)
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--size",  type=int, default=512)
+    parser.add_argument("--pano_cache_dir", default="cache/panos",
+                        help="Directory for persistent GSV thumbnail cache. Makes an "
+                             "encoder re-run fast and guarantees both runs see the same "
+                             "images. Empty string disables it.")
     parser.add_argument("--seed",  type=int, default=42)
     args = parser.parse_args()
 
@@ -181,6 +185,40 @@ def main():
     pano_cache: dict[str, bytes] = {}  # pano_id → bytes (avoid re-downloading)
     skipped   = 0
     n_cached  = 0
+    n_disk    = 0
+
+    # Persistent thumbnail cache. Without it, re-scoring the same area with a
+    # different encoder re-downloads every thumbnail, and — worse — may get a
+    # different set of images as panoramas expire, which would confound an
+    # encoder comparison. On disk, both runs see exactly the same pixels.
+    #
+    # Keyed by pano_id alone, matching the in-memory cache: the same pano
+    # requested at a different heading reuses the first heading fetched. That is
+    # the existing behaviour and is deterministic for a fixed input, so it is
+    # preserved here rather than silently changed.
+    disk_cache = Path(args.pano_cache_dir) if args.pano_cache_dir else None
+    if disk_cache:
+        disk_cache.mkdir(parents=True, exist_ok=True)
+        print(f"  Pano disk cache: {disk_cache}")
+
+    def cache_read(pano_id: str):
+        """Return bytes, None for a known-expired pano, or 'MISS' if unseen."""
+        if not disk_cache:
+            return "MISS"
+        img = disk_cache / f"{pano_id}.jpg"
+        if img.exists():
+            return img.read_bytes()
+        if (disk_cache / f"{pano_id}.expired").exists():
+            return None
+        return "MISS"
+
+    def cache_write(pano_id: str, img_bytes) -> None:
+        if not disk_cache:
+            return
+        if img_bytes is None:
+            (disk_cache / f"{pano_id}.expired").touch()
+        else:
+            (disk_cache / f"{pano_id}.jpg").write_bytes(img_bytes)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         for edge_key in tqdm(to_infer, desc="GSV fetch"):
@@ -201,15 +239,21 @@ def main():
                 pano_id, pitch = pool_panos[idx]
                 heading        = float(pool_headings[idx])
 
-                # Use cached bytes if already downloaded
+                # Use cached bytes if already downloaded, in memory then on disk
                 if pano_id in pano_cache:
                     img_bytes = pano_cache[pano_id]
                     n_cached += 1
                 else:
-                    img_bytes = fetch_thumbnail(pano_id, heading, pitch, session, args.size)
+                    cached = cache_read(pano_id)
+                    if cached != "MISS":
+                        img_bytes = cached
+                        n_disk += 1
+                    else:
+                        img_bytes = fetch_thumbnail(pano_id, heading, pitch, session, args.size)
+                        cache_write(pano_id, img_bytes)
+                        if args.sleep_ms > 0 and img_bytes is not None:
+                            time.sleep(args.sleep_ms / 1000)
                     pano_cache[pano_id] = img_bytes   # cache even None
-                    if args.sleep_ms > 0 and img_bytes is not None:
-                        time.sleep(args.sleep_ms / 1000)
 
                 if img_bytes is not None:
                     fpath = Path(tmpdir) / f"{edge_key}.jpg"
@@ -222,7 +266,7 @@ def main():
                 skipped += 1
 
         print(f"\n  Downloaded: {len(downloaded)}, Skipped (all panos expired): {skipped}")
-        print(f"  Pano cache hits: {n_cached}")
+        print(f"  Pano cache hits: {n_cached} in-memory, {n_disk} from disk")
 
         # ── 5. Batch inference ────────────────────────────────────────────────
         print(f"\nLoading DINOv2-large model …")
@@ -243,10 +287,29 @@ def main():
             batch_paths = img_paths[i : i + args.batch_size]
             results     = model.predict_batch(batch_paths)
             for key, preds in zip(batch_keys, results):
-                inferred[key] = {
+                entry = {
                     aid.lower().replace(" ", "_"): round(r["p_yes"], 4)
                     for aid, r in preds.items()
                 }
+                # Keep the full three-class distribution alongside p_yes.
+                #
+                # The probe predicts [p_no, p_unsure, p_yes], but only p_yes was
+                # ever stored, so the planner saw a single scalar. That collapses
+                # exactly the structure the soft-label training exists to
+                # preserve: a genuinely split scene ([0.45, 0.05, 0.45]) and a
+                # confident middling one both reduce to p_yes ~= 0.45. Any
+                # risk-sensitive objective needs p_no and p_unsure separately —
+                # "known impassable" and "unknown" call for different behaviour.
+                #
+                # p_yes stays a bare float so every existing consumer is
+                # unaffected.
+                entry["dist"] = {
+                    aid.lower().replace(" ", "_"): [
+                        round(r["p_no"], 4), round(r["p_unsure"], 4), round(r["p_yes"], 4)
+                    ]
+                    for aid, r in preds.items()
+                }
+                inferred[key] = entry
 
     # ── 6. Merge ──────────────────────────────────────────────────────────────
     from score_osm_edges import AIDS_KEYS, PRIOR_P_YES
@@ -260,6 +323,7 @@ def main():
             scores = inferred[edge_key]
             updated[edge_key] = {
                 **{k: scores.get(k, PRIOR_P_YES[k]) for k in AIDS_KEYS},
+                "dist":     scores.get("dist", {}),
                 "n_images": 1,
                 "source":   "inference",
             }

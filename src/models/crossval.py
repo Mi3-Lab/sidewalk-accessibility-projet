@@ -70,6 +70,29 @@ from train import (
 
 
 
+# ── Frozen-encoder feature cache ──────────────────────────────────────────────
+
+def build_feature_cache(
+    model, processor, device: torch.device, paths: list, enc_type: str
+) -> dict:
+    """Encode each unique image once and return {path: feature vector}.
+
+    The encoder is frozen, so a given image yields the same feature vector in
+    every fold, seed and mobility aid. Encoding once instead of per fold is what
+    makes repeated-seed CV cheap enough to run.
+    """
+    unique_paths = sorted({str(p) for p in paths})
+    feats = extract_encoder_features(
+        model, processor, device, unique_paths, enc_type
+    )
+    return {p: feats[i] for i, p in enumerate(unique_paths)}
+
+
+def _features_for(paths: list, feat_cache: dict) -> np.ndarray:
+    """Look up cached features for paths, preserving their order."""
+    return np.stack([feat_cache[str(p)] for p in paths])
+
+
 # ── Linear probe helpers ──────────────────────────────────────────────────────
 
 def predict_probe(probe: nn.Linear, X: np.ndarray, device: torch.device) -> np.ndarray:
@@ -101,6 +124,29 @@ def brier_score_hard(y_prob: np.ndarray, y_true: np.ndarray, n_classes: int = 3)
     """Standard Brier score: MSE between predicted probs and one-hot hard labels."""
     y_onehot = np.eye(n_classes)[y_true]
     return float(np.mean(np.sum((y_prob - y_onehot) ** 2, axis=1)))
+
+
+def entropy_correlation(y_prob: np.ndarray, y_soft: np.ndarray) -> float:
+    """Pearson r between the model's prediction entropy and the entropy of the
+    human vote distribution, across test items.
+
+    Brier asks whether the predicted distribution is right. This asks something
+    different and arguably more operational: does the model know *which scenes
+    people disagree about*? A planner that can flag contested edges is useful
+    even when its point estimate is off, and a Hard-CE model trained on argmax
+    labels has no way to represent that structure at all.
+
+    It is the metric the recent soft-label literature leads with, and this
+    dataset is unusually well placed to measure it: with 141-240 votes per
+    (image, aid) the human entropy estimate is far past the saturation point
+    where the metric is reported to converge (N~20-50).
+    """
+    eps = 1e-12
+    h_model = -(np.clip(y_prob, eps, 1) * np.log(np.clip(y_prob, eps, 1))).sum(axis=1)
+    h_human = -(np.clip(y_soft, eps, 1) * np.log(np.clip(y_soft, eps, 1))).sum(axis=1)
+    if h_model.std() < eps or h_human.std() < eps:
+        return float("nan")     # no spread to correlate (e.g. a degenerate fold)
+    return float(np.corrcoef(h_model, h_human)[0, 1])
 
 
 def expected_calibration_error(
@@ -150,11 +196,22 @@ def crossval_aid(
     enc_type: str,
     n_folds: int,
     loss_type: str = LOSS_TYPE,
+    seed: int = RANDOM_STATE,
+    feat_cache: dict | None = None,
+    rank: int = 0,
 ) -> dict:
     """
     Run n_folds CV for a single mobility aid.
     Folds are defined over unique ImageIDs (panoramas).
     All crops/rows from the same ImageID travel together.
+
+    seed controls both the fold partition and the probe initialisation, so
+    repeating the run with different seeds measures partition sensitivity —
+    the stability check a single seed=42 run cannot provide.
+
+    feat_cache maps image path -> encoder feature vector. The encoder is frozen,
+    so features are identical across folds and seeds; passing a prebuilt cache
+    avoids re-encoding the same images once per fold.
     """
     df_aid = df_aid.copy()
     df_aid["label_int"] = df_aid["argmax_label"].map(LABEL_MAP)
@@ -174,7 +231,7 @@ def crossval_aid(
     )
     pano_label.columns = ["ImageID", "label_int"]
 
-    skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=RANDOM_STATE)
+    skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=seed)
     y_arr = pano_label["label_int"].values
 
     fold_metrics: list[dict] = []
@@ -193,15 +250,11 @@ def crossval_aid(
             print(f"  [{aid}] fold {fold_idx}: empty split — skipping.")
             continue
 
-        set_seed(RANDOM_STATE + fold_idx)   # unique but deterministic per fold
+        set_seed(seed + fold_idx)   # unique but deterministic per (seed, fold)
         t0 = time.perf_counter()
 
-        X_train = extract_encoder_features(
-            model, processor, device, tr_df["path"].tolist(), enc_type
-        )
-        X_test = extract_encoder_features(
-            model, processor, device, te_df["path"].tolist(), enc_type
-        )
+        X_train = _features_for(tr_df["path"].tolist(), feat_cache)
+        X_test  = _features_for(te_df["path"].tolist(), feat_cache)
 
         y_test  = te_df["label_int"].values
         w_train = tr_df["sample_weight"].values
@@ -210,12 +263,21 @@ def crossval_aid(
         X_train = scaler.fit_transform(X_train)
         X_test  = scaler.transform(X_test)
 
+        # Probe init uses `seed` itself, not seed+fold_idx: this reproduces the
+        # original single-seed behaviour exactly at seed=42 while still varying
+        # the initialisation across seeds.
         if loss_type == "soft_kl":
             y_soft = tr_df[SOFT_COLS].values.astype(np.float32)
-            probe  = train_probe_soft(X_train, y_soft, w_train, X_train.shape[1], probe_device)
+            probe  = train_probe_soft(
+                X_train, y_soft, w_train, X_train.shape[1], probe_device,
+                seed=seed, rank=rank,
+            )
         else:
             y_train = tr_df["label_int"].values
-            probe   = train_probe_hard(X_train, y_train, w_train, X_train.shape[1], probe_device)
+            probe   = train_probe_hard(
+                X_train, y_train, w_train, X_train.shape[1], probe_device,
+                seed=seed, rank=rank,
+            )
 
         y_prob = predict_proba(probe, X_test, probe_device)   # (N, 3) softmax
         y_pred = y_prob.argmax(axis=1)
@@ -235,6 +297,7 @@ def crossval_aid(
             "brier_soft":      brier_score_soft(y_prob, y_soft_test),
             "brier_hard":      brier_score_hard(y_prob, y_test),
             "ece":             expected_calibration_error(y_prob, y_test),
+            "entropy_corr":    entropy_correlation(y_prob, y_soft_test),
             "elapsed_s":       round(elapsed, 2),
         }
         fold_metrics.append(m)
@@ -244,7 +307,8 @@ def crossval_aid(
             f"macro_f1={m['macro_f1']:.3f} | "
             f"bal_acc={m['balanced_acc']:.3f} | "
             f"brier_soft={m['brier_soft']:.3f} | "
-            f"ece={m['ece']:.3f}"
+            f"ece={m['ece']:.3f} | "
+            f"H-corr={m['entropy_corr']:.3f}"
         )
         if _WANDB_AVAILABLE and wandb.run is not None:
             aid_key = aid.lower().replace(" ", "_")
@@ -259,8 +323,8 @@ def crossval_aid(
     if not fold_metrics:
         return {}
 
-    def _mean(key): return float(np.mean([m[key] for m in fold_metrics]))
-    def _std(key):  return float(np.std( [m[key] for m in fold_metrics]))
+    def _mean(key): return float(np.nanmean([m[key] for m in fold_metrics]))
+    def _std(key):  return float(np.nanstd( [m[key] for m in fold_metrics]))
 
     return {
         "aid":                aid,
@@ -277,6 +341,8 @@ def crossval_aid(
         "brier_hard_std":     _std("brier_hard"),
         "ece_mean":           _mean("ece"),
         "ece_std":            _std("ece"),
+        "entropy_corr_mean":  _mean("entropy_corr"),
+        "entropy_corr_std":   _std("entropy_corr"),
         "folds":              fold_metrics,
     }
 
@@ -304,9 +370,25 @@ def main() -> None:
         help="soft_kl: KL divergence on vote distribution (default). hard_ce: argmax + entropy weight (ablation).",
     )
     parser.add_argument("--wandb_project", default="", help="W&B project name. Empty string disables W&B.")
+    parser.add_argument(
+        "--seed", type=int, default=RANDOM_STATE,
+        help="First seed for the fold partition and probe init.",
+    )
+    parser.add_argument(
+        "--rank", type=int, default=0,
+        help="Low-rank bottleneck for the probe (0 = the original full-rank d->3 "
+             "map used for every published number). A rank of 16-64 cuts soft "
+             "Brier ~30%% and raises macro F1; see results/coupled/.",
+    )
+    parser.add_argument(
+        "--n_seeds", type=int, default=1,
+        help="Number of consecutive seeds to run (seed, seed+1, ...). "
+             ">1 reports mean±std across seeds, measuring partition sensitivity.",
+    )
     args = parser.parse_args()
 
-    set_seed(RANDOM_STATE)
+    seeds = [args.seed + i for i in range(args.n_seeds)]
+    set_seed(args.seed)
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -332,6 +414,16 @@ def main() -> None:
     # ── Load encoder ─────────────────────────────────────────────────────────
     model, processor, device, enc_type = load_encoder(args.encoder)
 
+    # ── Encode every unique image once, reuse across folds/seeds/aids ────────
+    t_cache = time.perf_counter()
+    feat_cache = build_feature_cache(
+        model, processor, device, tallies["path"].tolist(), enc_type
+    )
+    print(
+        f"Feature cache: {len(feat_cache)} unique images encoded "
+        f"in {time.perf_counter() - t_cache:.1f}s\n"
+    )
+
     # ── CV config ────────────────────────────────────────────────────────────
     config = {
         "encoder":      args.encoder,
@@ -342,7 +434,9 @@ def main() -> None:
         "lr":           PROBE_LR,
         "epochs":       PROBE_EPOCHS,
         "weight_decay": PROBE_WD,
-        "random_state": RANDOM_STATE,
+        "random_state": args.seed,
+        "seeds":        seeds,
+        "rank":         args.rank,
     }
 
 
@@ -356,58 +450,124 @@ def main() -> None:
             config=config,
         )
 
-    all_results: dict = {
-        "config":             config,
-        "class_distribution": class_dist,
-        "aids":               {},
-    }
+    # ── Run CV per seed ──────────────────────────────────────────────────────
+    per_seed: dict[int, dict] = {}
 
-    # ── Run CV per aid ───────────────────────────────────────────────────────
-    for aid in AIDS:
-        df_aid = tallies[tallies["MobilityAid"] == aid]
-        if df_aid.empty:
-            print(f"[{aid}] no data — skipping.")
-            continue
-        print(
-            f"\n── {aid} "
-            f"({len(df_aid)} rows, {df_aid['ImageID'].nunique()} panoramas) ──"
-        )
-        summary = crossval_aid(
-            model, processor, device,
-            df_aid, aid, enc_type, args.n_folds, args.loss_type,
-        )
-        if summary:
-            all_results["aids"][aid] = summary
-            print(
-                f"  → macro_f1 = {summary['macro_f1_mean']:.3f}"
-                f" ± {summary['macro_f1_std']:.3f}"
-                f"  |  bal_acc = {summary['balanced_acc_mean']:.3f}"
-                f" ± {summary['balanced_acc_std']:.3f}"
-            )
-            if _WANDB_AVAILABLE and wandb.run is not None:
-                aid_key = aid.lower().replace(" ", "_")
-                wandb.summary[f"{aid_key}/macro_f1_mean"]    = round(summary["macro_f1_mean"],     4)
-                wandb.summary[f"{aid_key}/bal_acc_mean"]     = round(summary["balanced_acc_mean"], 4)
-                wandb.summary[f"{aid_key}/brier_soft_mean"]  = round(summary["brier_soft_mean"],   4)
-                wandb.summary[f"{aid_key}/brier_hard_mean"]  = round(summary["brier_hard_mean"],   4)
-                wandb.summary[f"{aid_key}/ece_mean"]         = round(summary["ece_mean"],          4)
+    for seed in seeds:
+        if len(seeds) > 1:
+            print(f"\n{'═' * 70}\n seed {seed}  ({seeds.index(seed) + 1}/{len(seeds)})\n{'═' * 70}")
 
-    # ── Aggregate across aids ────────────────────────────────────────────────
-    if all_results["aids"]:
-        aids_vals = all_results["aids"].values()
-        all_results["overall"] = {
-            "macro_f1_mean_across_aids":   float(np.mean([v["macro_f1_mean"]    for v in aids_vals])),
-            "macro_f1_std_across_aids":    float(np.std( [v["macro_f1_mean"]    for v in aids_vals])),
-            "brier_soft_mean_across_aids": float(np.mean([v["brier_soft_mean"]  for v in aids_vals])),
-            "brier_hard_mean_across_aids": float(np.mean([v["brier_hard_mean"]  for v in aids_vals])),
-            "ece_mean_across_aids":        float(np.mean([v["ece_mean"]         for v in aids_vals])),
+        seed_results: dict = {
+            "config":             {**config, "seed": seed},
+            "class_distribution": class_dist,
+            "aids":               {},
         }
+
+        for aid in AIDS:
+            df_aid = tallies[tallies["MobilityAid"] == aid]
+            if df_aid.empty:
+                print(f"[{aid}] no data — skipping.")
+                continue
+            print(
+                f"\n── {aid} "
+                f"({len(df_aid)} rows, {df_aid['ImageID'].nunique()} panoramas) ──"
+            )
+            summary = crossval_aid(
+                model, processor, device,
+                df_aid, aid, enc_type, args.n_folds, args.loss_type,
+                seed=seed, feat_cache=feat_cache, rank=args.rank,
+            )
+            if summary:
+                seed_results["aids"][aid] = summary
+                print(
+                    f"  → macro_f1 = {summary['macro_f1_mean']:.3f}"
+                    f" ± {summary['macro_f1_std']:.3f}"
+                    f"  |  bal_acc = {summary['balanced_acc_mean']:.3f}"
+                    f" ± {summary['balanced_acc_std']:.3f}"
+                )
+
+        # Aggregate across aids for this seed
+        if seed_results["aids"]:
+            aids_vals = seed_results["aids"].values()
+            seed_results["overall"] = {
+                "macro_f1_mean_across_aids":   float(np.mean([v["macro_f1_mean"]    for v in aids_vals])),
+                "macro_f1_std_across_aids":    float(np.std( [v["macro_f1_mean"]    for v in aids_vals])),
+                "brier_soft_mean_across_aids": float(np.mean([v["brier_soft_mean"]  for v in aids_vals])),
+                "brier_hard_mean_across_aids": float(np.mean([v["brier_hard_mean"]  for v in aids_vals])),
+                "ece_mean_across_aids":        float(np.mean([v["ece_mean"]         for v in aids_vals])),
+                "entropy_corr_mean_across_aids": float(np.nanmean([v["entropy_corr_mean"] for v in aids_vals])),
+            }
+
+        per_seed[seed] = seed_results
+
+        if len(seeds) > 1:
+            with open(output_dir / f"cv_results_seed{seed}.json", "w") as f:
+                json.dump(seed_results, f, indent=2)
+
+    # The first seed keeps the canonical filename so existing summarisers and
+    # the numbers already reported in the paper stay reproducible.
+    all_results = per_seed[seeds[0]]
+
+    if _WANDB_AVAILABLE and wandb.run is not None:
+        for aid, summary in all_results["aids"].items():
+            aid_key = aid.lower().replace(" ", "_")
+            wandb.summary[f"{aid_key}/macro_f1_mean"]    = round(summary["macro_f1_mean"],     4)
+            wandb.summary[f"{aid_key}/bal_acc_mean"]     = round(summary["balanced_acc_mean"], 4)
+            wandb.summary[f"{aid_key}/brier_soft_mean"]  = round(summary["brier_soft_mean"],   4)
+            wandb.summary[f"{aid_key}/brier_hard_mean"]  = round(summary["brier_hard_mean"],   4)
+            wandb.summary[f"{aid_key}/ece_mean"]         = round(summary["ece_mean"],          4)
 
     # ── Save ─────────────────────────────────────────────────────────────────
     out_path = output_dir / "cv_results.json"
     with open(out_path, "w") as f:
         json.dump(all_results, f, indent=2)
     print(f"\nResults saved → {out_path}")
+
+    # ── Across-seed stability (the reviewer's actual question) ───────────────
+    if len(seeds) > 1:
+        metrics = ["macro_f1", "brier_soft", "brier_hard", "ece", "entropy_corr"]
+        stability: dict = {"seeds": seeds, "n_seeds": len(seeds), "per_aid": {}}
+
+        for aid in AIDS:
+            vals = {
+                m: [per_seed[s]["aids"][aid][f"{m}_mean"]
+                    for s in seeds if aid in per_seed[s]["aids"]]
+                for m in metrics
+            }
+            if not vals["macro_f1"]:
+                continue
+            stability["per_aid"][aid] = {
+                f"{m}_mean_over_seeds": float(np.mean(vals[m])) for m in metrics
+            } | {
+                f"{m}_std_over_seeds": float(np.std(vals[m])) for m in metrics
+            } | {
+                f"{m}_per_seed": vals[m] for m in metrics
+            }
+
+        overall = {
+            m: [per_seed[s]["overall"][f"{m}_mean_across_aids"]
+                for s in seeds if "overall" in per_seed[s]]
+            for m in metrics
+        }
+        stability["overall"] = {
+            f"{m}_mean_over_seeds": float(np.mean(overall[m])) for m in metrics
+        } | {
+            f"{m}_std_over_seeds": float(np.std(overall[m])) for m in metrics
+        } | {
+            f"{m}_per_seed": overall[m] for m in metrics
+        }
+
+        ms_path = output_dir / "cv_results_multiseed.json"
+        with open(ms_path, "w") as f:
+            json.dump(stability, f, indent=2)
+        print(f"Across-seed stability saved → {ms_path}")
+
+        print(f"\n── Stability across {len(seeds)} seeds ({seeds[0]}–{seeds[-1]}) ──")
+        for m in metrics:
+            print(
+                f"  {m:<12} = {stability['overall'][f'{m}_mean_over_seeds']:.4f}"
+                f" ± {stability['overall'][f'{m}_std_over_seeds']:.4f}"
+            )
 
     if _WANDB_AVAILABLE and wandb.run is not None and "overall" in all_results:
         ov = all_results["overall"]

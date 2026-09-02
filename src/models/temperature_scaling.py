@@ -44,6 +44,8 @@ import torch.nn as nn
 import torch.optim as optim
 from scipy.optimize import minimize_scalar
 from sklearn.model_selection import StratifiedKFold
+
+from crossval import _features_for, build_feature_cache
 from sklearn.preprocessing import StandardScaler
 
 from train import (
@@ -116,8 +118,15 @@ def crossval_ts_aid(
     aid: str,
     enc_type: str,
     n_folds: int,
+    seed: int = RANDOM_STATE,
+    feat_cache: dict | None = None,
 ) -> dict:
-    """5-fold CV with temperature-scaled Hard-CE for one aid."""
+    """5-fold CV with temperature-scaled Hard-CE for one aid.
+
+    seed controls the fold partition, the train2/calibration split and the probe
+    init, so repeating over seeds measures how stable the temperature-scaling
+    result actually is. feat_cache holds frozen-encoder features, which never
+    change across folds or seeds."""
     df_aid = df_aid.copy()
     df_aid["label_int"] = df_aid["argmax_label"].map(LABEL_MAP)
 
@@ -133,7 +142,7 @@ def crossval_ts_aid(
     )
     pano_label.columns = ["ImageID", "label_int"]
 
-    skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=RANDOM_STATE)
+    skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=seed)
     y_arr = pano_label["label_int"].values
 
     fold_metrics: list[dict] = []
@@ -148,7 +157,7 @@ def crossval_ts_aid(
             continue
 
         # Split train panoramas into train2 / calibration at panorama level
-        rng = np.random.default_rng(RANDOM_STATE + fold_idx)
+        rng = np.random.default_rng(seed + fold_idx)
         n_cal_panos = max(1, int(len(tr_pano_ids) * CAL_SPLIT))
         cal_pano_ids = set(rng.choice(tr_pano_ids, size=n_cal_panos, replace=False))
         tr2_pano_ids = set(tr_pano_ids) - cal_pano_ids
@@ -159,13 +168,14 @@ def crossval_ts_aid(
         if tr2_df.empty or cal_df.empty:
             continue
 
-        set_seed(RANDOM_STATE + fold_idx)
+        set_seed(seed + fold_idx)
         t0 = time.perf_counter()
 
-        # Extract features for all three splits
-        X_tr2 = extract_encoder_features(model, processor, device, tr2_df["path"].tolist(), enc_type)
-        X_cal = extract_encoder_features(model, processor, device, cal_df["path"].tolist(), enc_type)
-        X_te  = extract_encoder_features(model, processor, device, te_df["path"].tolist(),  enc_type)
+        # Features come from the cache: the encoder is frozen, so they are
+        # identical across folds and seeds.
+        X_tr2 = _features_for(tr2_df["path"].tolist(), feat_cache)
+        X_cal = _features_for(cal_df["path"].tolist(), feat_cache)
+        X_te  = _features_for(te_df["path"].tolist(),  feat_cache)
 
         scaler = StandardScaler(with_mean=False)
         X_tr2 = scaler.fit_transform(X_tr2)
@@ -262,9 +272,17 @@ def main() -> None:
         choices=list(ENCODERS),
     )
     parser.add_argument("--n_folds", type=int, default=5)
+    parser.add_argument("--seed", type=int, default=RANDOM_STATE)
+    parser.add_argument(
+        "--n_seeds", type=int, default=1,
+        help="Number of consecutive seeds. >1 reports mean±std across independent "
+             "fold partitions, which is what tells us whether the temperature-scaling "
+             "result is stable or a single-draw artefact.",
+    )
     args = parser.parse_args()
 
-    set_seed(RANDOM_STATE)
+    seeds = [args.seed + i for i in range(args.n_seeds)]
+    set_seed(args.seed)
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -280,6 +298,11 @@ def main() -> None:
 
     model, processor, device, enc_type = load_encoder(args.encoder)
 
+    feat_cache = build_feature_cache(
+        model, processor, device, tallies["path"].tolist(), enc_type
+    )
+    print(f"Feature cache: {len(feat_cache)} unique images\n")
+
     config = {
         "encoder":      args.encoder,
         "hf_id":        ENCODERS[args.encoder][0],
@@ -290,41 +313,83 @@ def main() -> None:
         "lr":           PROBE_LR,
         "epochs":       PROBE_EPOCHS,
         "weight_decay": PROBE_WD,
-        "random_state": RANDOM_STATE,
+        "random_state": args.seed,
+        "seeds":        seeds,
     }
 
-    all_results: dict = {
-        "config": config,
-        "aids":   {},
-    }
+    per_seed: dict[int, dict] = {}
 
-    for aid in AIDS:
-        df_aid = tallies[tallies["MobilityAid"] == aid]
-        if df_aid.empty:
-            print(f"[{aid}] no data — skipping.")
-            continue
-        print(
-            f"\n── {aid} "
-            f"({len(df_aid)} rows, {df_aid['ImageID'].nunique()} panoramas) ──"
-        )
-        summary = crossval_ts_aid(
-            model, processor, device,
-            df_aid, aid, enc_type, args.n_folds,
-        )
-        if summary:
-            all_results["aids"][aid] = summary
+    for seed in seeds:
+        if len(seeds) > 1:
+            print(f"\n{'═' * 60}\n seed {seed}\n{'═' * 60}")
+
+        seed_results: dict = {"config": {**config, "seed": seed}, "aids": {}}
+
+        for aid in AIDS:
+            df_aid = tallies[tallies["MobilityAid"] == aid]
+            if df_aid.empty:
+                print(f"[{aid}] no data — skipping.")
+                continue
             print(
-                f"  → brier_soft_raw = {summary['brier_soft_raw_mean']:.3f}"
-                f" ± {summary['brier_soft_raw_std']:.3f}"
-                f"  |  brier_soft_ts = {summary['brier_soft_ts_mean']:.3f}"
-                f" ± {summary['brier_soft_ts_std']:.3f}"
-                f"  |  T = {summary['temperature_mean']:.3f}"
+                f"\n── {aid} "
+                f"({len(df_aid)} rows, {df_aid['ImageID'].nunique()} panoramas) ──"
             )
+            summary = crossval_ts_aid(
+                model, processor, device,
+                df_aid, aid, enc_type, args.n_folds,
+                seed=seed, feat_cache=feat_cache,
+            )
+            if summary:
+                seed_results["aids"][aid] = summary
+                print(
+                    f"  → brier_soft_raw = {summary['brier_soft_raw_mean']:.3f}"
+                    f" ± {summary['brier_soft_raw_std']:.3f}"
+                    f"  |  brier_soft_ts = {summary['brier_soft_ts_mean']:.3f}"
+                    f" ± {summary['brier_soft_ts_std']:.3f}"
+                    f"  |  T = {summary['temperature_mean']:.3f}"
+                )
 
+        per_seed[seed] = seed_results
+
+    all_results = per_seed[seeds[0]]
     out_path = output_dir / "cv_results.json"
     with open(out_path, "w") as f:
         json.dump(all_results, f, indent=2)
     print(f"\nResults saved → {out_path}")
+
+    if len(seeds) > 1:
+        import numpy as _np
+        keys = ["brier_soft_raw", "brier_soft_ts", "temperature"]
+        stability: dict = {"seeds": seeds, "n_seeds": len(seeds), "per_aid": {}}
+        for aid in AIDS:
+            vals = {k: [per_seed[s]["aids"][aid][f"{k}_mean"]
+                        for s in seeds if aid in per_seed[s]["aids"]] for k in keys}
+            if not vals["brier_soft_raw"]:
+                continue
+            stability["per_aid"][aid] = {
+                **{f"{k}_mean_over_seeds": float(_np.mean(vals[k])) for k in keys},
+                **{f"{k}_std_over_seeds":  float(_np.std(vals[k]))  for k in keys},
+                **{f"{k}_per_seed":        vals[k]                  for k in keys},
+            }
+        agg = {k: [v for aid in stability["per_aid"]
+                   for v in [stability["per_aid"][aid][f"{k}_mean_over_seeds"]]] for k in keys}
+        stability["overall"] = {
+            **{f"{k}_mean_over_seeds": float(_np.mean(agg[k])) for k in keys},
+            **{f"{k}_std_over_seeds":  float(_np.std(agg[k]))  for k in keys},
+        }
+        raw = stability["overall"]["brier_soft_raw_mean_over_seeds"]
+        ts  = stability["overall"]["brier_soft_ts_mean_over_seeds"]
+        stability["overall"]["ts_brier_reduction_pct"] = 100.0 * (raw - ts) / raw if raw else 0.0
+
+        ms_path = output_dir / "cv_results_multiseed.json"
+        with open(ms_path, "w") as f:
+            json.dump(stability, f, indent=2)
+        print(f"Across-seed stability saved → {ms_path}")
+        print(f"\n── Temperature scaling over {len(seeds)} seeds ──")
+        print(f"  Brier raw Hard-CE = {raw:.4f}")
+        print(f"  Brier T-scaled    = {ts:.4f}")
+        print(f"  reduction         = {stability['overall']['ts_brier_reduction_pct']:.1f}%"
+              f"   [paper claims ~34%]")
 
 
 if __name__ == "__main__":

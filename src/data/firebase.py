@@ -71,7 +71,7 @@ def extract_value(field: dict) -> object:
     return None
 
 
-def parse_doc(doc: dict) -> list[dict]:
+def parse_doc(doc: dict, keep_log_types: set[str] | None = None) -> list[dict]:
     """
     Parse one Firestore document into image_selection rows.
 
@@ -86,9 +86,17 @@ def parse_doc(doc: dict) -> list[dict]:
     """
     fields = {k: extract_value(v) for k, v in doc.get("fields", {}).items()}
 
-    # Skip incomplete/temp sessions — only process sessions that answered at least one group
-    # (logType "final" is complete; "CompletedOneMobilityAid" also has usable data)
+    # Session completion state. "final" is a fully completed session and
+    # "CompletedOneMobilityAid" finished at least one aid; "temp" and friends are
+    # sessions someone started and walked away from, which still carry real votes
+    # for whatever groups they did answer.
+    #
+    # Historically nothing filtered on this, so a participant counted as soon as
+    # they answered one group. keep_log_types=None preserves that behaviour;
+    # pass a set to restrict to completed sessions instead.
     log_type = str(fields.get("logType", "")).lower()
+    if keep_log_types is not None and log_type not in keep_log_types:
+        return []
 
     # Participant identifier
     doc_id  = doc.get("name", "").split("/")[-1]
@@ -190,20 +198,39 @@ def main() -> None:
     parser.add_argument("--output", required=True, help="Output CSV path")
     parser.add_argument("--merge",  default=None,
                         help="Existing image_selection.csv to merge with (deduplicates)")
+    parser.add_argument(
+        "--keep_log_types", default="",
+        help="Comma-separated logType values to keep, e.g. "
+             "'final,completedonemobilityaid' to count only sessions that finished "
+             "at least one aid. Empty (default) keeps every session that produced a "
+             "vote, which is how the published counts were computed.",
+    )
     args = parser.parse_args()
+
+    keep = ({t.strip().lower() for t in args.keep_log_types.split(",") if t.strip()}
+            or None)
 
     print(f"Loading {args.input} …")
     docs = load_jsonl(Path(args.input))
     print(f"  {len(docs):,} documents loaded")
 
+    if keep:
+        print(f"  keeping only logType in {sorted(keep)}")
+
     all_rows: list[dict] = []
     skipped = 0
+    log_type_counts: Counter = Counter()
     for doc in docs:
-        rows = parse_doc(doc)
+        log_type_counts[
+            str(doc.get("fields", {}).get("logType", {}).get("stringValue", "<none>"))
+        ] += 1
+        rows = parse_doc(doc, keep_log_types=keep)
         if rows:
             all_rows.extend(rows)
         else:
             skipped += 1
+
+    print(f"  logType breakdown: {dict(log_type_counts.most_common())}")
 
     print(f"  Parsed: {len(all_rows):,} vote rows  |  skipped: {skipped:,} docs (no usable data)")
 

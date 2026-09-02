@@ -1,0 +1,5411 @@
+{
+  "summary": {
+    "config": {
+      "tallies_json": "data/processed/tallies_firebase.json",
+      "images_dir": "data/images/sidewalk-images",
+      "pool_csv": "data/generalization/test_images.csv",
+      "output_dir": "results/semisup/clip-vit-b32",
+      "encoder": "clip-vit-b32",
+      "n_folds": 5,
+      "seed": 42,
+      "n_seeds": 10,
+      "max_entropy": 0.6,
+      "no_ps_consistency": false,
+      "max_pseudo": 0,
+      "pseudo_weight": 0.3,
+      "pool_cities": "",
+      "seeds": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51
+      ],
+      "n_records": 250
+    },
+    "pool": {
+      "n_images": 484,
+      "cities": {
+        "pittsburgh": 162,
+        "taipei": 95,
+        "detroit": 91,
+        "zurich": 89,
+        "la": 47
+      }
+    },
+    "overall": {
+      "macro_f1": {
+        "baseline_mean": 0.518476501591517,
+        "baseline_std": 0.1632663895977464,
+        "semisup_mean": 0.5228970153628048,
+        "semisup_std": 0.16071488735188685,
+        "delta": 0.004420513771287715
+      },
+      "brier_soft": {
+        "baseline_mean": 0.08175100901722908,
+        "baseline_std": 0.039036860459900076,
+        "semisup_mean": 0.0794839582554996,
+        "semisup_std": 0.038725340648610454,
+        "delta": -0.0022670507617294777
+      },
+      "ece": {
+        "baseline_mean": 0.24738519894101405,
+        "baseline_std": 0.08264881580047284,
+        "semisup_mean": 0.24272190122495998,
+        "semisup_std": 0.08368372240566052,
+        "delta": -0.00466329771605406
+      }
+    },
+    "per_aid": {
+      "Walking cane": {
+        "macro_f1": {
+          "baseline": 0.4922694358445132,
+          "semisup": 0.4867374154340098,
+          "delta": -0.005532020410503435
+        },
+        "brier_soft": {
+          "baseline": 0.06727962397038936,
+          "semisup": 0.06566629597917199,
+          "delta": -0.0016133279912173698
+        },
+        "ece": {
+          "baseline": 0.2352327780506828,
+          "semisup": 0.24019349495931105,
+          "delta": 0.00496071690862826
+        },
+        "pseudo_used_mean": 65.16
+      },
+      "Walker": {
+        "macro_f1": {
+          "baseline": 0.5599999444999445,
+          "semisup": 0.576127459142165,
+          "delta": 0.01612751464222051
+        },
+        "brier_soft": {
+          "baseline": 0.08095628768205643,
+          "semisup": 0.07761752732098103,
+          "delta": -0.003338760361075402
+        },
+        "ece": {
+          "baseline": 0.24157579508694735,
+          "semisup": 0.2526461002880877,
+          "delta": 0.011070305201140357
+        },
+        "pseudo_used_mean": 30.88
+      },
+      "Mobility scooter": {
+        "macro_f1": {
+          "baseline": 0.5374875141198671,
+          "semisup": 0.5352596880243938,
+          "delta": -0.0022278260954732287
+        },
+        "brier_soft": {
+          "baseline": 0.0580315350741148,
+          "semisup": 0.05651886988431215,
+          "delta": -0.0015126651898026491
+        },
+        "ece": {
+          "baseline": 0.2750501488284631,
+          "semisup": 0.25427005143057213,
+          "delta": -0.020780097397890995
+        },
+        "pseudo_used_mean": 24.6
+      },
+      "Manual wheelchair": {
+        "macro_f1": {
+          "baseline": 0.47445507107271817,
+          "semisup": 0.4850072656102068,
+          "delta": 0.010552194537488624
+        },
+        "brier_soft": {
+          "baseline": 0.07579270116984844,
+          "semisup": 0.0747078724205494,
+          "delta": -0.0010848287492990494
+        },
+        "ece": {
+          "baseline": 0.22730146603150803,
+          "semisup": 0.2042287862842733,
+          "delta": -0.02307267974723473
+        },
+        "pseudo_used_mean": 25.4
+      },
+      "Motorized wheelchair": {
+        "macro_f1": {
+          "baseline": 0.5281705424205423,
+          "semisup": 0.5313532486032486,
+          "delta": 0.0031827061827063297
+        },
+        "brier_soft": {
+          "baseline": 0.12669489718973637,
+          "semisup": 0.12290922567248344,
+          "delta": -0.0037856715172529254
+        },
+        "ece": {
+          "baseline": 0.25776580670746896,
+          "semisup": 0.26227107316255566,
+          "delta": 0.004505266455086698
+        },
+        "pseudo_used_mean": 45.36
+      }
+    }
+  },
+  "records": [
+    {
+      "seed": 42,
+      "aid": "Walking cane",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.45,
+        "brier_soft": 0.07790076732635498,
+        "ece": 0.31816673278808594
+      },
+      "semisup": {
+        "macro_f1": 0.45,
+        "brier_soft": 0.08182694017887115,
+        "ece": 0.26072185147892346
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 219,
+        "after_ps_filter": 135,
+        "used": 135
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Walking cane",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.42105263157894735,
+        "brier_soft": 0.04381454363465309,
+        "ece": 0.2875820831819014
+      },
+      "semisup": {
+        "macro_f1": 0.6944444444444444,
+        "brier_soft": 0.03922494873404503,
+        "ece": 0.2035371336069974
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 141,
+        "after_ps_filter": 85,
+        "used": 85
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Walking cane",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.803921568627451,
+        "brier_soft": 0.028657501563429832,
+        "ece": 0.2789596050977706
+      },
+      "semisup": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.03207767754793167,
+        "ece": 0.2681467831134796
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 168,
+        "after_ps_filter": 102,
+        "used": 102
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Walking cane",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.044566307216882706,
+        "ece": 0.1533656358718872
+      },
+      "semisup": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.04546133801341057,
+        "ece": 0.17198718786239625
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 133,
+        "after_ps_filter": 88,
+        "used": 88
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Walking cane",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.06141304969787598,
+        "ece": 0.3114421904087067
+      },
+      "semisup": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.060718245804309845,
+        "ece": 0.2403951346874237
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 178,
+        "after_ps_filter": 116,
+        "used": 116
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Walker",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.8035714285714286,
+        "brier_soft": 0.05536064878106117,
+        "ece": 0.319129545580257
+      },
+      "semisup": {
+        "macro_f1": 0.8952380952380952,
+        "brier_soft": 0.04896114766597748,
+        "ece": 0.41032285581935535
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 105,
+        "after_ps_filter": 57,
+        "used": 57
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Walker",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.6071428571428572,
+        "brier_soft": 0.08100643754005432,
+        "ece": 0.08307808095758608
+      },
+      "semisup": {
+        "macro_f1": 0.6071428571428572,
+        "brier_soft": 0.07269144803285599,
+        "ece": 0.22704569589007978
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 133,
+        "after_ps_filter": 75,
+        "used": 75
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Walker",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.5833333333333333,
+        "brier_soft": 0.05135892704129219,
+        "ece": 0.25249393880367277
+      },
+      "semisup": {
+        "macro_f1": 0.6703296703296704,
+        "brier_soft": 0.05202297121286392,
+        "ece": 0.35136727392673495
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 56,
+        "after_ps_filter": 30,
+        "used": 30
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Walker",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.8,
+        "brier_soft": 0.05134451389312744,
+        "ece": 0.40562224388122564
+      },
+      "semisup": {
+        "macro_f1": 0.696969696969697,
+        "brier_soft": 0.04153519123792648,
+        "ece": 0.3874561905860901
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 97,
+        "after_ps_filter": 55,
+        "used": 55
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Walker",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.3333333333333333,
+        "brier_soft": 0.08871102333068848,
+        "ece": 0.171430304646492
+      },
+      "semisup": {
+        "macro_f1": 0.375,
+        "brier_soft": 0.08236083388328552,
+        "ece": 0.21465764939785004
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 174,
+        "after_ps_filter": 103,
+        "used": 103
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Mobility scooter",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.3418803418803419,
+        "brier_soft": 0.04181613028049469,
+        "ece": 0.1706584962931546
+      },
+      "semisup": {
+        "macro_f1": 0.4107142857142857,
+        "brier_soft": 0.03505944460630417,
+        "ece": 0.08433957533402875
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 74,
+        "after_ps_filter": 44,
+        "used": 44
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Mobility scooter",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.30036630036630035,
+        "brier_soft": 0.06079848110675812,
+        "ece": 0.30037335645068775
+      },
+      "semisup": {
+        "macro_f1": 0.25,
+        "brier_soft": 0.06418002396821976,
+        "ece": 0.3390152779492465
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 136,
+        "after_ps_filter": 85,
+        "used": 85
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Mobility scooter",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.6875,
+        "brier_soft": 0.026017049327492714,
+        "ece": 0.30342894196510317
+      },
+      "semisup": {
+        "macro_f1": 0.4117647058823529,
+        "brier_soft": 0.02329089492559433,
+        "ece": 0.25397676527500146
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 121,
+        "after_ps_filter": 73,
+        "used": 73
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Mobility scooter",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.8666666666666667,
+        "brier_soft": 0.026704076677560806,
+        "ece": 0.4103172540664673
+      },
+      "semisup": {
+        "macro_f1": 0.6875,
+        "brier_soft": 0.021106284111738205,
+        "ece": 0.2828671991825104
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 92,
+        "after_ps_filter": 52,
+        "used": 52
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Mobility scooter",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.5238095238095238,
+        "brier_soft": 0.062408048659563065,
+        "ece": 0.13746637105941772
+      },
+      "semisup": {
+        "macro_f1": 0.6000000000000001,
+        "brier_soft": 0.05728902667760849,
+        "ece": 0.3228554368019104
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 84,
+        "after_ps_filter": 49,
+        "used": 49
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Manual wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.48888888888888893,
+        "brier_soft": 0.05243286117911339,
+        "ece": 0.17301403121514755
+      },
+      "semisup": {
+        "macro_f1": 0.48888888888888893,
+        "brier_soft": 0.04839489609003067,
+        "ece": 0.1773936558853496
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 75,
+        "after_ps_filter": 42,
+        "used": 42
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Manual wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.3888888888888889,
+        "brier_soft": 0.04377901554107666,
+        "ece": 0.26133224909955804
+      },
+      "semisup": {
+        "macro_f1": 0.3888888888888889,
+        "brier_soft": 0.037986136972904205,
+        "ece": 0.2027635249224576
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 147,
+        "after_ps_filter": 90,
+        "used": 90
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Manual wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.375,
+        "brier_soft": 0.08079572767019272,
+        "ece": 0.1422959864139557
+      },
+      "semisup": {
+        "macro_f1": 0.375,
+        "brier_soft": 0.07516627013683319,
+        "ece": 0.24584609270095825
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 70,
+        "after_ps_filter": 40,
+        "used": 40
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Manual wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.6000000000000001,
+        "brier_soft": 0.051368534564971924,
+        "ece": 0.1687992572784424
+      },
+      "semisup": {
+        "macro_f1": 0.5238095238095238,
+        "brier_soft": 0.051210708916187286,
+        "ece": 0.22389914989471438
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 85,
+        "after_ps_filter": 51,
+        "used": 51
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Manual wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.06821655482053757,
+        "ece": 0.26687848269939424
+      },
+      "semisup": {
+        "macro_f1": 0.4117647058823529,
+        "brier_soft": 0.060830604285001755,
+        "ece": 0.3656417310237884
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 166,
+        "after_ps_filter": 98,
+        "used": 98
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Motorized wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.3148148148148148,
+        "brier_soft": 0.13152915239334106,
+        "ece": 0.2831825749440627
+      },
+      "semisup": {
+        "macro_f1": 0.38181818181818183,
+        "brier_soft": 0.13776133954524994,
+        "ece": 0.25645859945904126
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 180,
+        "after_ps_filter": 114,
+        "used": 114
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Motorized wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.3333333333333333,
+        "brier_soft": 0.09729306399822235,
+        "ece": 0.20315158367156982
+      },
+      "semisup": {
+        "macro_f1": 0.3333333333333333,
+        "brier_soft": 0.093141108751297,
+        "ece": 0.2810132882811806
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 110,
+        "after_ps_filter": 66,
+        "used": 66
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Motorized wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.696969696969697,
+        "brier_soft": 0.09509897977113724,
+        "ece": 0.1291076898574829
+      },
+      "semisup": {
+        "macro_f1": 0.6,
+        "brier_soft": 0.08556832373142242,
+        "ece": 0.3128407746553421
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 102,
+        "after_ps_filter": 61,
+        "used": 61
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Motorized wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.6,
+        "brier_soft": 0.07302664965391159,
+        "ece": 0.23751254081726075
+      },
+      "semisup": {
+        "macro_f1": 0.696969696969697,
+        "brier_soft": 0.06943744421005249,
+        "ece": 0.23374126255512237
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 116,
+        "after_ps_filter": 68,
+        "used": 68
+      }
+    },
+    {
+      "seed": 42,
+      "aid": "Motorized wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.6,
+        "brier_soft": 0.11675326526165009,
+        "ece": 0.1672839134931564
+      },
+      "semisup": {
+        "macro_f1": 0.4949494949494949,
+        "brier_soft": 0.1126190647482872,
+        "ece": 0.09716796278953552
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 136,
+        "after_ps_filter": 81,
+        "used": 81
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Walking cane",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.3888888888888889,
+        "brier_soft": 0.05598285421729088,
+        "ece": 0.19218772649765015
+      },
+      "semisup": {
+        "macro_f1": 0.3888888888888889,
+        "brier_soft": 0.0589451938867569,
+        "ece": 0.20012147318233142
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 182,
+        "after_ps_filter": 115,
+        "used": 115
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Walking cane",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.6944444444444444,
+        "brier_soft": 0.017942897975444794,
+        "ece": 0.18301185152747412
+      },
+      "semisup": {
+        "macro_f1": 0.611764705882353,
+        "brier_soft": 0.020206643268465996,
+        "ece": 0.2500301816246726
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 108,
+        "after_ps_filter": 69,
+        "used": 69
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Walking cane",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.06732811778783798,
+        "ece": 0.21579364836215972
+      },
+      "semisup": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.07202337682247162,
+        "ece": 0.21162517368793488
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 93,
+        "after_ps_filter": 58,
+        "used": 58
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Walking cane",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.4117647058823529,
+        "brier_soft": 0.06373511999845505,
+        "ece": 0.1138848215341568
+      },
+      "semisup": {
+        "macro_f1": 0.4117647058823529,
+        "brier_soft": 0.055765070021152496,
+        "ece": 0.19007658064365388
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 223,
+        "after_ps_filter": 138,
+        "used": 138
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Walking cane",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.2745098039215686,
+        "brier_soft": 0.08764854818582535,
+        "ece": 0.12577731013298035
+      },
+      "semisup": {
+        "macro_f1": 0.2745098039215686,
+        "brier_soft": 0.09097957611083984,
+        "ece": 0.1350586473941803
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 126,
+        "after_ps_filter": 79,
+        "used": 79
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Walker",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.7708333333333333,
+        "brier_soft": 0.05057547986507416,
+        "ece": 0.39969166029583314
+      },
+      "semisup": {
+        "macro_f1": 0.611764705882353,
+        "brier_soft": 0.041154272854328156,
+        "ece": 0.29644008387218823
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 78,
+        "after_ps_filter": 50,
+        "used": 50
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Walker",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.42857142857142855,
+        "brier_soft": 0.071739561855793,
+        "ece": 0.3024049021980979
+      },
+      "semisup": {
+        "macro_f1": 0.6857142857142857,
+        "brier_soft": 0.060223404318094254,
+        "ece": 0.19534419070590628
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 85,
+        "after_ps_filter": 56,
+        "used": 56
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Walker",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.5833333333333333,
+        "brier_soft": 0.04969906806945801,
+        "ece": 0.2219699919223785
+      },
+      "semisup": {
+        "macro_f1": 0.6703296703296704,
+        "brier_soft": 0.051683228462934494,
+        "ece": 0.15524312853813169
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 68,
+        "after_ps_filter": 45,
+        "used": 45
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Walker",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.31746031746031744,
+        "brier_soft": 0.07492425292730331,
+        "ece": 0.1852147072553635
+      },
+      "semisup": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.0691734254360199,
+        "ece": 0.25986149609088893
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 85,
+        "after_ps_filter": 57,
+        "used": 57
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Walker",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.07903160899877548,
+        "ece": 0.2778804838657379
+      },
+      "semisup": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.0754687711596489,
+        "ece": 0.19077011346817013
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 116,
+        "after_ps_filter": 76,
+        "used": 76
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Mobility scooter",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.8035714285714286,
+        "brier_soft": 0.022323645651340485,
+        "ece": 0.3257389339533719
+      },
+      "semisup": {
+        "macro_f1": 0.717948717948718,
+        "brier_soft": 0.02535499818623066,
+        "ece": 0.23799586296081546
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 48,
+        "after_ps_filter": 32,
+        "used": 32
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Mobility scooter",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.3333333333333333,
+        "brier_soft": 0.04550255835056305,
+        "ece": 0.31935105269605457
+      },
+      "semisup": {
+        "macro_f1": 0.3833333333333333,
+        "brier_soft": 0.038052380084991455,
+        "ece": 0.2713478749448603
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 55,
+        "after_ps_filter": 33,
+        "used": 33
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Mobility scooter",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.3333333333333333,
+        "brier_soft": 0.05261657387018204,
+        "ece": 0.2622600138187408
+      },
+      "semisup": {
+        "macro_f1": 0.3333333333333333,
+        "brier_soft": 0.04272367060184479,
+        "ece": 0.12575069069862366
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 66,
+        "after_ps_filter": 45,
+        "used": 45
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Mobility scooter",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.7619047619047619,
+        "brier_soft": 0.035042066127061844,
+        "ece": 0.26519941687583926
+      },
+      "semisup": {
+        "macro_f1": 0.7619047619047619,
+        "brier_soft": 0.0308604147285223,
+        "ece": 0.3113093703985214
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 90,
+        "after_ps_filter": 62,
+        "used": 62
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Mobility scooter",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.6703296703296704,
+        "brier_soft": 0.04356865584850311,
+        "ece": 0.20334490537643435
+      },
+      "semisup": {
+        "macro_f1": 0.6703296703296704,
+        "brier_soft": 0.042663343250751495,
+        "ece": 0.15531907975673673
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 77,
+        "after_ps_filter": 53,
+        "used": 53
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Manual wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.6944444444444444,
+        "brier_soft": 0.060278501361608505,
+        "ece": 0.2992688715457916
+      },
+      "semisup": {
+        "macro_f1": 0.6944444444444444,
+        "brier_soft": 0.055599749088287354,
+        "ece": 0.3455077138814059
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 46,
+        "after_ps_filter": 30,
+        "used": 30
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Manual wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.5416666666666666,
+        "brier_soft": 0.04518658667802811,
+        "ece": 0.28782265294681897
+      },
+      "semisup": {
+        "macro_f1": 0.5416666666666666,
+        "brier_soft": 0.04574327543377876,
+        "ece": 0.12210014733401214
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 86,
+        "after_ps_filter": 54,
+        "used": 54
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Manual wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.6703296703296704,
+        "brier_soft": 0.08429616689682007,
+        "ece": 0.36206520199775694
+      },
+      "semisup": {
+        "macro_f1": 0.7619047619047619,
+        "brier_soft": 0.07300093024969101,
+        "ece": 0.3435631662607193
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 77,
+        "after_ps_filter": 50,
+        "used": 50
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Manual wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.41269841269841273,
+        "brier_soft": 0.048514559864997864,
+        "ece": 0.2939243793487549
+      },
+      "semisup": {
+        "macro_f1": 0.41269841269841273,
+        "brier_soft": 0.04385000094771385,
+        "ece": 0.1145495355129242
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 61,
+        "after_ps_filter": 40,
+        "used": 40
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Manual wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.4117647058823529,
+        "brier_soft": 0.07877177000045776,
+        "ece": 0.13389894366264343
+      },
+      "semisup": {
+        "macro_f1": 0.4117647058823529,
+        "brier_soft": 0.08092842251062393,
+        "ece": 0.08589212298393248
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 59,
+        "after_ps_filter": 36,
+        "used": 36
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Motorized wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.8035714285714286,
+        "brier_soft": 0.08901979774236679,
+        "ece": 0.39178151975978504
+      },
+      "semisup": {
+        "macro_f1": 0.8035714285714286,
+        "brier_soft": 0.08373551070690155,
+        "ece": 0.38885211131789466
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 98,
+        "after_ps_filter": 67,
+        "used": 67
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Motorized wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.4107142857142857,
+        "brier_soft": 0.11981973052024841,
+        "ece": 0.19523805650797757
+      },
+      "semisup": {
+        "macro_f1": 0.5299145299145299,
+        "brier_soft": 0.10355362296104431,
+        "ece": 0.29268197308887134
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 79,
+        "after_ps_filter": 51,
+        "used": 51
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Motorized wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.696969696969697,
+        "brier_soft": 0.0646229013800621,
+        "ece": 0.2504632025957107
+      },
+      "semisup": {
+        "macro_f1": 0.696969696969697,
+        "brier_soft": 0.06706371903419495,
+        "ece": 0.280854257941246
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 64,
+        "after_ps_filter": 43,
+        "used": 43
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Motorized wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.4949494949494949,
+        "brier_soft": 0.12330736964941025,
+        "ece": 0.34700841903686525
+      },
+      "semisup": {
+        "macro_f1": 0.4949494949494949,
+        "brier_soft": 0.11350192874670029,
+        "ece": 0.3469811439514161
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 107,
+        "after_ps_filter": 73,
+        "used": 73
+      }
+    },
+    {
+      "seed": 43,
+      "aid": "Motorized wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.31746031746031744,
+        "brier_soft": 0.09563932567834854,
+        "ece": 0.29144364595413214
+      },
+      "semisup": {
+        "macro_f1": 0.4090909090909091,
+        "brier_soft": 0.09272482991218567,
+        "ece": 0.3072567224502563
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 101,
+        "after_ps_filter": 66,
+        "used": 66
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Walking cane",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.611764705882353,
+        "brier_soft": 0.10771676898002625,
+        "ece": 0.07008727572181009
+      },
+      "semisup": {
+        "macro_f1": 0.611764705882353,
+        "brier_soft": 0.10910332947969437,
+        "ece": 0.07052645900032739
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 10,
+        "after_ps_filter": 3,
+        "used": 3
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Walking cane",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.611764705882353,
+        "brier_soft": 0.05100724846124649,
+        "ece": 0.1608505899255926
+      },
+      "semisup": {
+        "macro_f1": 0.611764705882353,
+        "brier_soft": 0.0478786826133728,
+        "ece": 0.1967367882078344
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 15,
+        "after_ps_filter": 13,
+        "used": 13
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Walking cane",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.47368421052631576,
+        "brier_soft": 0.052434634417295456,
+        "ece": 0.4098526984453202
+      },
+      "semisup": {
+        "macro_f1": 0.47368421052631576,
+        "brier_soft": 0.0523984432220459,
+        "ece": 0.3630364954471589
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 17,
+        "after_ps_filter": 13,
+        "used": 13
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Walking cane",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.08847503364086151,
+        "ece": 0.24567692279815673
+      },
+      "semisup": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.0742943286895752,
+        "ece": 0.24391102790832517
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 100,
+        "after_ps_filter": 67,
+        "used": 67
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Walking cane",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.6000000000000001,
+        "brier_soft": 0.09177114814519882,
+        "ece": 0.22495750486850738
+      },
+      "semisup": {
+        "macro_f1": 0.6000000000000001,
+        "brier_soft": 0.08447983860969543,
+        "ece": 0.21738508045673371
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 10,
+        "after_ps_filter": 9,
+        "used": 9
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Walker",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.6333333333333333,
+        "brier_soft": 0.04142872616648674,
+        "ece": 0.1323294151913036
+      },
+      "semisup": {
+        "macro_f1": 0.6333333333333333,
+        "brier_soft": 0.04048800840973854,
+        "ece": 0.12364848906343633
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 7,
+        "after_ps_filter": 6,
+        "used": 6
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Walker",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.717948717948718,
+        "brier_soft": 0.07550854235887527,
+        "ece": 0.13483315706253052
+      },
+      "semisup": {
+        "macro_f1": 0.717948717948718,
+        "brier_soft": 0.0727008655667305,
+        "ece": 0.12792425805872137
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 23,
+        "after_ps_filter": 16,
+        "used": 16
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Walker",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 1.0,
+        "brier_soft": 0.04279137775301933,
+        "ece": 0.39653154611587527
+      },
+      "semisup": {
+        "macro_f1": 1.0,
+        "brier_soft": 0.04234657064080238,
+        "ece": 0.39180387258529664
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 5,
+        "after_ps_filter": 3,
+        "used": 3
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Walker",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.4949494949494949,
+        "brier_soft": 0.19853179156780243,
+        "ece": 0.40795555114746096
+      },
+      "semisup": {
+        "macro_f1": 0.4949494949494949,
+        "brier_soft": 0.19907541573047638,
+        "ece": 0.4093539953231812
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 5,
+        "after_ps_filter": 2,
+        "used": 2
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Walker",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.6410256410256411,
+        "brier_soft": 0.061271537095308304,
+        "ece": 0.3984178870916366
+      },
+      "semisup": {
+        "macro_f1": 0.6410256410256411,
+        "brier_soft": 0.06273580342531204,
+        "ece": 0.40012917220592503
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 9,
+        "after_ps_filter": 4,
+        "used": 4
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Mobility scooter",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.7272727272727273,
+        "brier_soft": 0.047699056565761566,
+        "ece": 0.23534390872175043
+      },
+      "semisup": {
+        "macro_f1": 0.7272727272727273,
+        "brier_soft": 0.04620877280831337,
+        "ece": 0.2364686294035478
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 2,
+        "after_ps_filter": 1,
+        "used": 1
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Mobility scooter",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.8952380952380952,
+        "brier_soft": 0.051109910011291504,
+        "ece": 0.3517203466458754
+      },
+      "semisup": {
+        "macro_f1": 0.8035714285714286,
+        "brier_soft": 0.05165747553110123,
+        "ece": 0.2686076435175809
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 6,
+        "after_ps_filter": 5,
+        "used": 5
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Mobility scooter",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.7619047619047619,
+        "brier_soft": 0.03190464898943901,
+        "ece": 0.27673221826553346
+      },
+      "semisup": {
+        "macro_f1": 0.7619047619047619,
+        "brier_soft": 0.03054235503077507,
+        "ece": 0.3338498294353485
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 2,
+        "after_ps_filter": 2,
+        "used": 2
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Mobility scooter",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.6703296703296704,
+        "brier_soft": 0.09631519764661789,
+        "ece": 0.3600514352321625
+      },
+      "semisup": {
+        "macro_f1": 0.5833333333333333,
+        "brier_soft": 0.09601929783821106,
+        "ece": 0.26305390000343326
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 2,
+        "after_ps_filter": 2,
+        "used": 2
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Mobility scooter",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.11310986429452896,
+        "ece": 0.33582691550254823
+      },
+      "semisup": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.11310986429452896,
+        "ece": 0.33582691550254823
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 1,
+        "after_ps_filter": 0,
+        "used": 0
+      },
+      "note": "no pseudo-labels survived filtering"
+    },
+    {
+      "seed": 44,
+      "aid": "Manual wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.7708333333333333,
+        "brier_soft": 0.09346354752779007,
+        "ece": 0.2957342131571336
+      },
+      "semisup": {
+        "macro_f1": 0.7708333333333333,
+        "brier_soft": 0.0918351411819458,
+        "ece": 0.29214503548362036
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 3,
+        "after_ps_filter": 3,
+        "used": 3
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Manual wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.5454545454545454,
+        "brier_soft": 0.1137944757938385,
+        "ece": 0.08359722115776753
+      },
+      "semisup": {
+        "macro_f1": 0.5454545454545454,
+        "brier_soft": 0.1137944757938385,
+        "ece": 0.08359722115776753
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 0,
+        "after_ps_filter": 0,
+        "used": 0
+      },
+      "note": "no pseudo-labels survived filtering"
+    },
+    {
+      "seed": 44,
+      "aid": "Manual wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.4117647058823529,
+        "brier_soft": 0.04284603148698807,
+        "ece": 0.26505261361598964
+      },
+      "semisup": {
+        "macro_f1": 0.4117647058823529,
+        "brier_soft": 0.03851538151502609,
+        "ece": 0.163771390914917
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 5,
+        "after_ps_filter": 4,
+        "used": 4
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Manual wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.3162393162393162,
+        "brier_soft": 0.0643317922949791,
+        "ece": 0.36576179862022407
+      },
+      "semisup": {
+        "macro_f1": 0.3162393162393162,
+        "brier_soft": 0.06238999217748642,
+        "ece": 0.2613076329231262
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 4,
+        "after_ps_filter": 4,
+        "used": 4
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Manual wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.3333333333333333,
+        "brier_soft": 0.08716324716806412,
+        "ece": 0.11671759486198423
+      },
+      "semisup": {
+        "macro_f1": 0.3333333333333333,
+        "brier_soft": 0.0869317576289177,
+        "ece": 0.11524722874164581
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 1,
+        "after_ps_filter": 1,
+        "used": 1
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Motorized wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.6071428571428572,
+        "brier_soft": 0.13731181621551514,
+        "ece": 0.14374774965372952
+      },
+      "semisup": {
+        "macro_f1": 0.8035714285714286,
+        "brier_soft": 0.1283457726240158,
+        "ece": 0.2909918535839428
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 16,
+        "after_ps_filter": 12,
+        "used": 12
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Motorized wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.47619047619047616,
+        "brier_soft": 0.1813148707151413,
+        "ece": 0.13928831436417322
+      },
+      "semisup": {
+        "macro_f1": 0.47619047619047616,
+        "brier_soft": 0.1825760006904602,
+        "ece": 0.1358540870926597
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 9,
+        "after_ps_filter": 7,
+        "used": 7
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Motorized wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.696969696969697,
+        "brier_soft": 0.04526924341917038,
+        "ece": 0.15170604586601258
+      },
+      "semisup": {
+        "macro_f1": 0.8,
+        "brier_soft": 0.034325044602155685,
+        "ece": 0.3126036733388901
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 17,
+        "after_ps_filter": 14,
+        "used": 14
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Motorized wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.5238095238095238,
+        "brier_soft": 0.1791391670703888,
+        "ece": 0.2825233280658722
+      },
+      "semisup": {
+        "macro_f1": 0.5238095238095238,
+        "brier_soft": 0.1634463667869568,
+        "ece": 0.49749850630760195
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 43,
+        "after_ps_filter": 32,
+        "used": 32
+      }
+    },
+    {
+      "seed": 44,
+      "aid": "Motorized wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.1503663808107376,
+        "ece": 0.1587461590766907
+      },
+      "semisup": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.14979538321495056,
+        "ece": 0.16544966101646424
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 12,
+        "after_ps_filter": 9,
+        "used": 9
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Walking cane",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.42105263157894735,
+        "brier_soft": 0.09971246868371964,
+        "ece": 0.2663113122636621
+      },
+      "semisup": {
+        "macro_f1": 0.42105263157894735,
+        "brier_soft": 0.10156518965959549,
+        "ece": 0.2960742684927854
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 141,
+        "after_ps_filter": 89,
+        "used": 89
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Walking cane",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.8070175438596491,
+        "brier_soft": 0.06182527542114258,
+        "ece": 0.3928124850446528
+      },
+      "semisup": {
+        "macro_f1": 0.6944444444444444,
+        "brier_soft": 0.05944627895951271,
+        "ece": 0.3082287528298118
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 221,
+        "after_ps_filter": 134,
+        "used": 134
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Walking cane",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.47368421052631576,
+        "brier_soft": 0.0395985022187233,
+        "ece": 0.35212253332138055
+      },
+      "semisup": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.03899053484201431,
+        "ece": 0.33412337899208067
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 62,
+        "after_ps_filter": 39,
+        "used": 39
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Walking cane",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.47368421052631576,
+        "brier_soft": 0.029722940176725388,
+        "ece": 0.2644689083099365
+      },
+      "semisup": {
+        "macro_f1": 0.2962962962962963,
+        "brier_soft": 0.032008759677410126,
+        "ece": 0.25227256715297697
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 175,
+        "after_ps_filter": 114,
+        "used": 114
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Walking cane",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.375,
+        "brier_soft": 0.10875113308429718,
+        "ece": 0.2739489883184433
+      },
+      "semisup": {
+        "macro_f1": 0.375,
+        "brier_soft": 0.10122595727443695,
+        "ece": 0.2618101894855499
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 146,
+        "after_ps_filter": 84,
+        "used": 84
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Walker",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.5416666666666666,
+        "brier_soft": 0.1327735334634781,
+        "ece": 0.2872753278775648
+      },
+      "semisup": {
+        "macro_f1": 0.611764705882353,
+        "brier_soft": 0.1288156658411026,
+        "ece": 0.3748292299834165
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 63,
+        "after_ps_filter": 35,
+        "used": 35
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Walker",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.6333333333333333,
+        "brier_soft": 0.11343986541032791,
+        "ece": 0.13438384370370343
+      },
+      "semisup": {
+        "macro_f1": 0.6333333333333333,
+        "brier_soft": 0.10411269217729568,
+        "ece": 0.18241611394015225
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 50,
+        "after_ps_filter": 30,
+        "used": 30
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Walker",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.6,
+        "brier_soft": 0.06497199088335037,
+        "ece": 0.2310460329055786
+      },
+      "semisup": {
+        "macro_f1": 0.6,
+        "brier_soft": 0.05934615060687065,
+        "ece": 0.17753509581089016
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 73,
+        "after_ps_filter": 37,
+        "used": 37
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Walker",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.4949494949494949,
+        "brier_soft": 0.040917523205280304,
+        "ece": 0.15949500799179078
+      },
+      "semisup": {
+        "macro_f1": 0.4949494949494949,
+        "brier_soft": 0.040262557566165924,
+        "ece": 0.24611375927925114
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 104,
+        "after_ps_filter": 52,
+        "used": 52
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Walker",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.2857142857142857,
+        "brier_soft": 0.11292519420385361,
+        "ece": 0.23557977676391603
+      },
+      "semisup": {
+        "macro_f1": 0.2857142857142857,
+        "brier_soft": 0.10944253206253052,
+        "ece": 0.19209791421890257
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 39,
+        "after_ps_filter": 26,
+        "used": 26
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Mobility scooter",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.6857142857142857,
+        "brier_soft": 0.06583413481712341,
+        "ece": 0.3259034942496906
+      },
+      "semisup": {
+        "macro_f1": 0.717948717948718,
+        "brier_soft": 0.06261982023715973,
+        "ece": 0.27355592901056464
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 65,
+        "after_ps_filter": 45,
+        "used": 45
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Mobility scooter",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.15384615384615385,
+        "brier_soft": 0.0546557754278183,
+        "ece": 0.31006244095889
+      },
+      "semisup": {
+        "macro_f1": 0.26666666666666666,
+        "brier_soft": 0.05148670822381973,
+        "ece": 0.2123695964163
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 23,
+        "after_ps_filter": 14,
+        "used": 14
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Mobility scooter",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.5833333333333333,
+        "brier_soft": 0.0736965760588646,
+        "ece": 0.18339908719062809
+      },
+      "semisup": {
+        "macro_f1": 0.6703296703296704,
+        "brier_soft": 0.0679713562130928,
+        "ece": 0.21116643846035002
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 41,
+        "after_ps_filter": 24,
+        "used": 24
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Mobility scooter",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.26515151515151514,
+        "brier_soft": 0.10163123905658722,
+        "ece": 0.24362870752811433
+      },
+      "semisup": {
+        "macro_f1": 0.31746031746031744,
+        "brier_soft": 0.09738685190677643,
+        "ece": 0.31231222152709964
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 97,
+        "after_ps_filter": 55,
+        "used": 55
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Mobility scooter",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.6000000000000001,
+        "brier_soft": 0.024021578952670097,
+        "ece": 0.1916782021522522
+      },
+      "semisup": {
+        "macro_f1": 0.6000000000000001,
+        "brier_soft": 0.02576289139688015,
+        "ece": 0.28416697978973393
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 51,
+        "after_ps_filter": 32,
+        "used": 32
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Manual wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.5416666666666666,
+        "brier_soft": 0.07785134762525558,
+        "ece": 0.36017081954262475
+      },
+      "semisup": {
+        "macro_f1": 0.5416666666666666,
+        "brier_soft": 0.07452807575464249,
+        "ece": 0.27298848195509473
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 23,
+        "after_ps_filter": 14,
+        "used": 14
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Manual wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.5416666666666666,
+        "brier_soft": 0.0725243017077446,
+        "ece": 0.09764546155929563
+      },
+      "semisup": {
+        "macro_f1": 0.5416666666666666,
+        "brier_soft": 0.07573357224464417,
+        "ece": 0.1046193946491588
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 62,
+        "after_ps_filter": 43,
+        "used": 43
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Manual wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.5238095238095238,
+        "brier_soft": 0.09788383543491364,
+        "ece": 0.17865450084209442
+      },
+      "semisup": {
+        "macro_f1": 0.6000000000000001,
+        "brier_soft": 0.0970335304737091,
+        "ece": 0.2933097034692765
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 66,
+        "after_ps_filter": 32,
+        "used": 32
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Manual wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.4682539682539682,
+        "brier_soft": 0.11479417979717255,
+        "ece": 0.19211007356643672
+      },
+      "semisup": {
+        "macro_f1": 0.4090909090909091,
+        "brier_soft": 0.10844552516937256,
+        "ece": 0.09295881390571595
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 32,
+        "after_ps_filter": 16,
+        "used": 16
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Manual wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.2222222222222222,
+        "brier_soft": 0.1086021214723587,
+        "ece": 0.13184878528118135
+      },
+      "semisup": {
+        "macro_f1": 0.2222222222222222,
+        "brier_soft": 0.09726843982934952,
+        "ece": 0.14458411037921903
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 57,
+        "after_ps_filter": 39,
+        "used": 39
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Motorized wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.3125,
+        "brier_soft": 0.18207335472106934,
+        "ece": 0.25344197858463635
+      },
+      "semisup": {
+        "macro_f1": 0.3125,
+        "brier_soft": 0.16229663789272308,
+        "ece": 0.13834753361615268
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 109,
+        "after_ps_filter": 71,
+        "used": 71
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Motorized wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.7272727272727273,
+        "brier_soft": 0.09674787521362305,
+        "ece": 0.1593659520149231
+      },
+      "semisup": {
+        "macro_f1": 0.717948717948718,
+        "brier_soft": 0.0965132936835289,
+        "ece": 0.16020306132056494
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 77,
+        "after_ps_filter": 44,
+        "used": 44
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Motorized wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.3481481481481481,
+        "brier_soft": 0.06487102806568146,
+        "ece": 0.12218520343303678
+      },
+      "semisup": {
+        "macro_f1": 0.6,
+        "brier_soft": 0.05410930514335632,
+        "ece": 0.21844810843467713
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 77,
+        "after_ps_filter": 52,
+        "used": 52
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Motorized wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.4949494949494949,
+        "brier_soft": 0.17362967133522034,
+        "ece": 0.35932516753673555
+      },
+      "semisup": {
+        "macro_f1": 0.4949494949494949,
+        "brier_soft": 0.179007887840271,
+        "ece": 0.2334331452846527
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 182,
+        "after_ps_filter": 105,
+        "used": 105
+      }
+    },
+    {
+      "seed": 45,
+      "aid": "Motorized wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.4222222222222222,
+        "brier_soft": 0.11045453697443008,
+        "ece": 0.19440248906612395
+      },
+      "semisup": {
+        "macro_f1": 0.4222222222222222,
+        "brier_soft": 0.09758822619915009,
+        "ece": 0.225205072760582
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 76,
+        "after_ps_filter": 54,
+        "used": 54
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Walking cane",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.20833333333333334,
+        "brier_soft": 0.10455901175737381,
+        "ece": 0.15574152361262927
+      },
+      "semisup": {
+        "macro_f1": 0.35294117647058826,
+        "brier_soft": 0.09430836886167526,
+        "ece": 0.05749569697813555
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 128,
+        "after_ps_filter": 85,
+        "used": 85
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Walking cane",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.35294117647058826,
+        "brier_soft": 0.0795898512005806,
+        "ece": 0.15960165587338535
+      },
+      "semisup": {
+        "macro_f1": 0.35294117647058826,
+        "brier_soft": 0.07368869334459305,
+        "ece": 0.15215843374078922
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 33,
+        "after_ps_filter": 21,
+        "used": 21
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Walking cane",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.803921568627451,
+        "brier_soft": 0.056379534304142,
+        "ece": 0.2510100185871124
+      },
+      "semisup": {
+        "macro_f1": 0.47368421052631576,
+        "brier_soft": 0.05101577192544937,
+        "ece": 0.22616575956344606
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 90,
+        "after_ps_filter": 57,
+        "used": 57
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Walking cane",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.4117647058823529,
+        "brier_soft": 0.06739547103643417,
+        "ece": 0.19077548384666443
+      },
+      "semisup": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.06253298372030258,
+        "ece": 0.18667037189006802
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 55,
+        "after_ps_filter": 34,
+        "used": 34
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Walking cane",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.47368421052631576,
+        "brier_soft": 0.05293720215559006,
+        "ece": 0.22877575755119323
+      },
+      "semisup": {
+        "macro_f1": 0.47368421052631576,
+        "brier_soft": 0.050596512854099274,
+        "ece": 0.2133986711502075
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 65,
+        "after_ps_filter": 44,
+        "used": 44
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Walker",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.47619047619047616,
+        "brier_soft": 0.09457264095544815,
+        "ece": 0.08544021844863889
+      },
+      "semisup": {
+        "macro_f1": 0.4107142857142857,
+        "brier_soft": 0.08967509865760803,
+        "ece": 0.18465435233983124
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 31,
+        "after_ps_filter": 18,
+        "used": 18
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Walker",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.2857142857142857,
+        "brier_soft": 0.11195025593042374,
+        "ece": 0.2306620261885903
+      },
+      "semisup": {
+        "macro_f1": 0.4107142857142857,
+        "brier_soft": 0.10634822398424149,
+        "ece": 0.15279912677678198
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 27,
+        "after_ps_filter": 15,
+        "used": 15
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Walker",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.8901098901098901,
+        "brier_soft": 0.05827700346708298,
+        "ece": 0.2886725604534149
+      },
+      "semisup": {
+        "macro_f1": 0.8901098901098901,
+        "brier_soft": 0.05409141629934311,
+        "ece": 0.2964592814445495
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 22,
+        "after_ps_filter": 13,
+        "used": 13
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Walker",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.29292929292929293,
+        "brier_soft": 0.11413984000682831,
+        "ece": 0.28563205003738407
+      },
+      "semisup": {
+        "macro_f1": 0.16666666666666666,
+        "brier_soft": 0.10801351070404053,
+        "ece": 0.38481328189373015
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 14,
+        "after_ps_filter": 7,
+        "used": 7
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Walker",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.696969696969697,
+        "brier_soft": 0.045045770704746246,
+        "ece": 0.1533973217010498
+      },
+      "semisup": {
+        "macro_f1": 0.7916666666666667,
+        "brier_soft": 0.04002484679222107,
+        "ece": 0.24405818879604338
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 43,
+        "after_ps_filter": 25,
+        "used": 25
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Mobility scooter",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.4107142857142857,
+        "brier_soft": 0.06998208910226822,
+        "ece": 0.11475506695834074
+      },
+      "semisup": {
+        "macro_f1": 0.47619047619047616,
+        "brier_soft": 0.06705419719219208,
+        "ece": 0.281344397501512
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 20,
+        "after_ps_filter": 13,
+        "used": 13
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Mobility scooter",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.4107142857142857,
+        "brier_soft": 0.07435192167758942,
+        "ece": 0.17413124442100525
+      },
+      "semisup": {
+        "macro_f1": 0.4107142857142857,
+        "brier_soft": 0.072818823158741,
+        "ece": 0.24566710537130182
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 8,
+        "after_ps_filter": 5,
+        "used": 5
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Mobility scooter",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.6,
+        "brier_soft": 0.0769713893532753,
+        "ece": 0.20341842174530034
+      },
+      "semisup": {
+        "macro_f1": 0.6,
+        "brier_soft": 0.07908572256565094,
+        "ece": 0.19488075375556946
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 16,
+        "after_ps_filter": 9,
+        "used": 9
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Mobility scooter",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.12958593666553497,
+        "ece": 0.2377586603164673
+      },
+      "semisup": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.12918999791145325,
+        "ece": 0.2367316246032715
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 5,
+        "after_ps_filter": 3,
+        "used": 3
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Mobility scooter",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.6703296703296704,
+        "brier_soft": 0.03288065642118454,
+        "ece": 0.30013072788715356
+      },
+      "semisup": {
+        "macro_f1": 0.6703296703296704,
+        "brier_soft": 0.03233075886964798,
+        "ece": 0.19469923675060274
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 36,
+        "after_ps_filter": 24,
+        "used": 24
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Manual wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.5416666666666666,
+        "brier_soft": 0.09917015582323074,
+        "ece": 0.29581831802021374
+      },
+      "semisup": {
+        "macro_f1": 0.5416666666666666,
+        "brier_soft": 0.09382639080286026,
+        "ece": 0.056644017046148104
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 60,
+        "after_ps_filter": 42,
+        "used": 42
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Manual wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.611764705882353,
+        "brier_soft": 0.06119377911090851,
+        "ece": 0.18966494094241745
+      },
+      "semisup": {
+        "macro_f1": 0.6857142857142857,
+        "brier_soft": 0.06234447658061981,
+        "ece": 0.185210875489495
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 22,
+        "after_ps_filter": 12,
+        "used": 12
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Manual wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.3333333333333333,
+        "brier_soft": 0.09139490127563477,
+        "ece": 0.2955051213502884
+      },
+      "semisup": {
+        "macro_f1": 0.3333333333333333,
+        "brier_soft": 0.09468554705381393,
+        "ece": 0.29587988555431366
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 6,
+        "after_ps_filter": 5,
+        "used": 5
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Manual wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.3333333333333333,
+        "brier_soft": 0.09164752811193466,
+        "ece": 0.17358162403106692
+      },
+      "semisup": {
+        "macro_f1": 0.3333333333333333,
+        "brier_soft": 0.09015394747257233,
+        "ece": 0.18331561386585235
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 14,
+        "after_ps_filter": 6,
+        "used": 6
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Manual wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.08196120709180832,
+        "ece": 0.20459564030170438
+      },
+      "semisup": {
+        "macro_f1": 0.4117647058823529,
+        "brier_soft": 0.07935024797916412,
+        "ece": 0.10503945946693417
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 53,
+        "after_ps_filter": 37,
+        "used": 37
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Motorized wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.45,
+        "brier_soft": 0.16496728360652924,
+        "ece": 0.262343474409797
+      },
+      "semisup": {
+        "macro_f1": 0.5454545454545454,
+        "brier_soft": 0.15999357402324677,
+        "ece": 0.20911615545099432
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 24,
+        "after_ps_filter": 18,
+        "used": 18
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Motorized wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.6333333333333333,
+        "brier_soft": 0.1468895822763443,
+        "ece": 0.2534805319525979
+      },
+      "semisup": {
+        "macro_f1": 0.6071428571428572,
+        "brier_soft": 0.14636339247226715,
+        "ece": 0.12660437280481512
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 17,
+        "after_ps_filter": 13,
+        "used": 13
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Motorized wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.4,
+        "brier_soft": 0.08255428075790405,
+        "ece": 0.18705121278762818
+      },
+      "semisup": {
+        "macro_f1": 0.375,
+        "brier_soft": 0.08421697467565536,
+        "ece": 0.2761101841926574
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 84,
+        "after_ps_filter": 53,
+        "used": 53
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Motorized wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.696969696969697,
+        "brier_soft": 0.14697329699993134,
+        "ece": 0.31529224514961246
+      },
+      "semisup": {
+        "macro_f1": 0.696969696969697,
+        "brier_soft": 0.13065865635871887,
+        "ece": 0.311853951215744
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 62,
+        "after_ps_filter": 45,
+        "used": 45
+      }
+    },
+    {
+      "seed": 46,
+      "aid": "Motorized wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.26515151515151514,
+        "brier_soft": 0.09261618554592133,
+        "ece": 0.3693920433521271
+      },
+      "semisup": {
+        "macro_f1": 0.3481481481481481,
+        "brier_soft": 0.08442322909832001,
+        "ece": 0.35481854677200314
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 48,
+        "after_ps_filter": 33,
+        "used": 33
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Walking cane",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.611764705882353,
+        "brier_soft": 0.07779848575592041,
+        "ece": 0.3401755121621219
+      },
+      "semisup": {
+        "macro_f1": 0.611764705882353,
+        "brier_soft": 0.07889928668737411,
+        "ece": 0.3419996283271096
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 1,
+        "after_ps_filter": 1,
+        "used": 1
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Walking cane",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.45,
+        "brier_soft": 0.0796128362417221,
+        "ece": 0.2085640755566684
+      },
+      "semisup": {
+        "macro_f1": 0.45,
+        "brier_soft": 0.07772494852542877,
+        "ece": 0.21907019073312933
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 27,
+        "after_ps_filter": 21,
+        "used": 21
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Walking cane",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.47368421052631576,
+        "brier_soft": 0.059438444674015045,
+        "ece": 0.23186473846435549
+      },
+      "semisup": {
+        "macro_f1": 0.47368421052631576,
+        "brier_soft": 0.06148066371679306,
+        "ece": 0.23071222901344302
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 8,
+        "after_ps_filter": 2,
+        "used": 2
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Walking cane",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.3333333333333333,
+        "brier_soft": 0.09405882656574249,
+        "ece": 0.19353576302528383
+      },
+      "semisup": {
+        "macro_f1": 0.3333333333333333,
+        "brier_soft": 0.09334423393011093,
+        "ece": 0.18853989243507385
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 3,
+        "after_ps_filter": 3,
+        "used": 3
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Walking cane",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.43333333333333335,
+        "brier_soft": 0.09623575210571289,
+        "ece": 0.19288912117481233
+      },
+      "semisup": {
+        "macro_f1": 0.5138888888888888,
+        "brier_soft": 0.09204679727554321,
+        "ece": 0.3250812262296677
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 2,
+        "after_ps_filter": 2,
+        "used": 2
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Walker",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.45,
+        "brier_soft": 0.12897951900959015,
+        "ece": 0.1547050936655565
+      },
+      "semisup": {
+        "macro_f1": 0.45,
+        "brier_soft": 0.1282089203596115,
+        "ece": 0.2662215070290999
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 11,
+        "after_ps_filter": 7,
+        "used": 7
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Walker",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.7708333333333333,
+        "brier_soft": 0.07086442410945892,
+        "ece": 0.2717585103078322
+      },
+      "semisup": {
+        "macro_f1": 0.7708333333333333,
+        "brier_soft": 0.06980682164430618,
+        "ece": 0.2713486904447729
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 2,
+        "after_ps_filter": 2,
+        "used": 2
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Walker",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.4949494949494949,
+        "brier_soft": 0.09365968406200409,
+        "ece": 0.3469024389982224
+      },
+      "semisup": {
+        "macro_f1": 0.4949494949494949,
+        "brier_soft": 0.08561603724956512,
+        "ece": 0.17715915739536284
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 6,
+        "after_ps_filter": 3,
+        "used": 3
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Walker",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.13449761271476746,
+        "ece": 0.23112247586250306
+      },
+      "semisup": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.13052129745483398,
+        "ece": 0.19245164394378667
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 9,
+        "after_ps_filter": 5,
+        "used": 5
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Walker",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.5238095238095238,
+        "brier_soft": 0.0672055035829544,
+        "ece": 0.22423114776611328
+      },
+      "semisup": {
+        "macro_f1": 0.5238095238095238,
+        "brier_soft": 0.06863172352313995,
+        "ece": 0.2258632779121399
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 2,
+        "after_ps_filter": 2,
+        "used": 2
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Mobility scooter",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.5416666666666666,
+        "brier_soft": 0.07745492458343506,
+        "ece": 0.29417661916125903
+      },
+      "semisup": {
+        "macro_f1": 0.5416666666666666,
+        "brier_soft": 0.07675091177225113,
+        "ece": 0.29451249133456836
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 2,
+        "after_ps_filter": 2,
+        "used": 2
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Mobility scooter",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.48888888888888893,
+        "brier_soft": 0.0860060378909111,
+        "ece": 0.24315006624568597
+      },
+      "semisup": {
+        "macro_f1": 0.48888888888888893,
+        "brier_soft": 0.08581672608852386,
+        "ece": 0.2931706255132501
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 3,
+        "after_ps_filter": 3,
+        "used": 3
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Mobility scooter",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.6000000000000001,
+        "brier_soft": 0.08020356297492981,
+        "ece": 0.2895344465970993
+      },
+      "semisup": {
+        "macro_f1": 0.6000000000000001,
+        "brier_soft": 0.07850883901119232,
+        "ece": 0.22645653784275055
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 4,
+        "after_ps_filter": 3,
+        "used": 3
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Mobility scooter",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.4949494949494949,
+        "brier_soft": 0.06089664623141289,
+        "ece": 0.23164387643337253
+      },
+      "semisup": {
+        "macro_f1": 0.4949494949494949,
+        "brier_soft": 0.05963565781712532,
+        "ece": 0.13135440349578856
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 2,
+        "after_ps_filter": 2,
+        "used": 2
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Mobility scooter",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.375,
+        "brier_soft": 0.0592922568321228,
+        "ece": 0.3419575899839401
+      },
+      "semisup": {
+        "macro_f1": 0.375,
+        "brier_soft": 0.05911082774400711,
+        "ece": 0.34213461279869084
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 2,
+        "after_ps_filter": 2,
+        "used": 2
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Manual wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.6071428571428572,
+        "brier_soft": 0.11453687399625778,
+        "ece": 0.16005000472068787
+      },
+      "semisup": {
+        "macro_f1": 0.6071428571428572,
+        "brier_soft": 0.1133076399564743,
+        "ece": 0.15882995182817633
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 3,
+        "after_ps_filter": 2,
+        "used": 2
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Manual wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.34920634920634924,
+        "brier_soft": 0.1329994797706604,
+        "ece": 0.21461123499003326
+      },
+      "semisup": {
+        "macro_f1": 0.30036630036630035,
+        "brier_soft": 0.13868318498134613,
+        "ece": 0.1768784929405559
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 9,
+        "after_ps_filter": 9,
+        "used": 9
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Manual wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.2857142857142857,
+        "brier_soft": 0.0966314747929573,
+        "ece": 0.2935433864593506
+      },
+      "semisup": {
+        "macro_f1": 0.2857142857142857,
+        "brier_soft": 0.09490330517292023,
+        "ece": 0.28724255561828616
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 2,
+        "after_ps_filter": 2,
+        "used": 2
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Manual wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.5238095238095238,
+        "brier_soft": 0.062017954885959625,
+        "ece": 0.14813779294490817
+      },
+      "semisup": {
+        "macro_f1": 0.5238095238095238,
+        "brier_soft": 0.06376735866069794,
+        "ece": 0.1488894790410996
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 1,
+        "after_ps_filter": 1,
+        "used": 1
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Manual wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.5238095238095238,
+        "brier_soft": 0.06795529276132584,
+        "ece": 0.2045199513435364
+      },
+      "semisup": {
+        "macro_f1": 0.5238095238095238,
+        "brier_soft": 0.06648074090480804,
+        "ece": 0.20509033203125
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 2,
+        "after_ps_filter": 2,
+        "used": 2
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Motorized wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.45,
+        "brier_soft": 0.11901180446147919,
+        "ece": 0.16774119843136182
+      },
+      "semisup": {
+        "macro_f1": 0.45,
+        "brier_soft": 0.12401459366083145,
+        "ece": 0.1718023338101127
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 20,
+        "after_ps_filter": 14,
+        "used": 14
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Motorized wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.6333333333333333,
+        "brier_soft": 0.18274883925914764,
+        "ece": 0.22305029088800604
+      },
+      "semisup": {
+        "macro_f1": 0.6333333333333333,
+        "brier_soft": 0.1761803776025772,
+        "ece": 0.256850158626383
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 18,
+        "after_ps_filter": 12,
+        "used": 12
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Motorized wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.5833333333333333,
+        "brier_soft": 0.12996326386928558,
+        "ece": 0.08669364154338835
+      },
+      "semisup": {
+        "macro_f1": 0.5833333333333333,
+        "brier_soft": 0.12731370329856873,
+        "ece": 0.13422086238861083
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 5,
+        "after_ps_filter": 4,
+        "used": 4
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Motorized wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.375,
+        "brier_soft": 0.21747560799121857,
+        "ece": 0.3514881551265717
+      },
+      "semisup": {
+        "macro_f1": 0.375,
+        "brier_soft": 0.21490272879600525,
+        "ece": 0.34942683577537537
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 7,
+        "after_ps_filter": 6,
+        "used": 6
+      }
+    },
+    {
+      "seed": 47,
+      "aid": "Motorized wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.13408342003822327,
+        "ece": 0.1894465744495392
+      },
+      "semisup": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.13519373536109924,
+        "ece": 0.29617918729782106
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 12,
+        "after_ps_filter": 6,
+        "used": 6
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Walking cane",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.45,
+        "brier_soft": 0.04778394475579262,
+        "ece": 0.15346577492627234
+      },
+      "semisup": {
+        "macro_f1": 0.8070175438596491,
+        "brier_soft": 0.04889826476573944,
+        "ece": 0.41260703585364605
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 167,
+        "after_ps_filter": 101,
+        "used": 101
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Walking cane",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.611764705882353,
+        "brier_soft": 0.08737418055534363,
+        "ece": 0.28705661947076966
+      },
+      "semisup": {
+        "macro_f1": 0.6944444444444444,
+        "brier_soft": 0.08293145149946213,
+        "ece": 0.23921182480725373
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 123,
+        "after_ps_filter": 80,
+        "used": 80
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Walking cane",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.6875,
+        "brier_soft": 0.06260310858488083,
+        "ece": 0.2928457289934158
+      },
+      "semisup": {
+        "macro_f1": 0.803921568627451,
+        "brier_soft": 0.06216620281338692,
+        "ece": 0.30224140584468845
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 75,
+        "after_ps_filter": 43,
+        "used": 43
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Walking cane",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.4117647058823529,
+        "brier_soft": 0.039795778691768646,
+        "ece": 0.1723472774028778
+      },
+      "semisup": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.040884144604206085,
+        "ece": 0.2850086838006973
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 243,
+        "after_ps_filter": 142,
+        "used": 142
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Walking cane",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.4117647058823529,
+        "brier_soft": 0.028320753946900368,
+        "ece": 0.266912055015564
+      },
+      "semisup": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.03046128712594509,
+        "ece": 0.27147930264472964
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 180,
+        "after_ps_filter": 102,
+        "used": 102
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Walker",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.6857142857142857,
+        "brier_soft": 0.0763138085603714,
+        "ece": 0.256052632223476
+      },
+      "semisup": {
+        "macro_f1": 0.8035714285714286,
+        "brier_soft": 0.07660425454378128,
+        "ece": 0.2578958733515306
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 27,
+        "after_ps_filter": 12,
+        "used": 12
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Walker",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.6857142857142857,
+        "brier_soft": 0.10008551925420761,
+        "ece": 0.2900165752931074
+      },
+      "semisup": {
+        "macro_f1": 0.6857142857142857,
+        "brier_soft": 0.10039737075567245,
+        "ece": 0.22400469671596182
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 122,
+        "after_ps_filter": 71,
+        "used": 71
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Walker",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.696969696969697,
+        "brier_soft": 0.03522815927863121,
+        "ece": 0.15516290664672852
+      },
+      "semisup": {
+        "macro_f1": 0.7619047619047619,
+        "brier_soft": 0.03339993953704834,
+        "ece": 0.2387709975242615
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 54,
+        "after_ps_filter": 29,
+        "used": 29
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Walker",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.7619047619047619,
+        "brier_soft": 0.03179369121789932,
+        "ece": 0.2929757356643677
+      },
+      "semisup": {
+        "macro_f1": 0.7619047619047619,
+        "brier_soft": 0.03481811285018921,
+        "ece": 0.2900198519229889
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 38,
+        "after_ps_filter": 21,
+        "used": 21
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Walker",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.6703296703296704,
+        "brier_soft": 0.059537697583436966,
+        "ece": 0.23977489471435548
+      },
+      "semisup": {
+        "macro_f1": 0.6703296703296704,
+        "brier_soft": 0.05613826960325241,
+        "ece": 0.2194987177848816
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 130,
+        "after_ps_filter": 79,
+        "used": 79
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Mobility scooter",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.611764705882353,
+        "brier_soft": 0.05120819807052612,
+        "ece": 0.21304884282025421
+      },
+      "semisup": {
+        "macro_f1": 0.611764705882353,
+        "brier_soft": 0.051355525851249695,
+        "ece": 0.20986700870774008
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 16,
+        "after_ps_filter": 8,
+        "used": 8
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Mobility scooter",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.8035714285714286,
+        "brier_soft": 0.04028625786304474,
+        "ece": 0.3749050579287789
+      },
+      "semisup": {
+        "macro_f1": 0.8035714285714286,
+        "brier_soft": 0.03745659068226814,
+        "ece": 0.39495783502405335
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 44,
+        "after_ps_filter": 25,
+        "used": 25
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Mobility scooter",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.7619047619047619,
+        "brier_soft": 0.06352105736732483,
+        "ece": 0.3927615106105804
+      },
+      "semisup": {
+        "macro_f1": 0.7619047619047619,
+        "brier_soft": 0.059912316501140594,
+        "ece": 0.38658686876297
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 33,
+        "after_ps_filter": 14,
+        "used": 14
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Mobility scooter",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.375,
+        "brier_soft": 0.06000199913978577,
+        "ece": 0.18408877253532405
+      },
+      "semisup": {
+        "macro_f1": 0.3333333333333333,
+        "brier_soft": 0.05956299230456352,
+        "ece": 0.278859281539917
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 82,
+        "after_ps_filter": 48,
+        "used": 48
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Mobility scooter",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.7916666666666667,
+        "brier_soft": 0.026132509112358093,
+        "ece": 0.24628993570804597
+      },
+      "semisup": {
+        "macro_f1": 0.7916666666666667,
+        "brier_soft": 0.02771715819835663,
+        "ece": 0.2362496882677078
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 36,
+        "after_ps_filter": 21,
+        "used": 21
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Manual wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.2745098039215686,
+        "brier_soft": 0.05274275317788124,
+        "ece": 0.22506705197420987
+      },
+      "semisup": {
+        "macro_f1": 0.2745098039215686,
+        "brier_soft": 0.05241202190518379,
+        "ece": 0.2119677256454121
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 34,
+        "after_ps_filter": 19,
+        "used": 19
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Manual wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.5299145299145299,
+        "brier_soft": 0.07156699150800705,
+        "ece": 0.1903424046256325
+      },
+      "semisup": {
+        "macro_f1": 0.6071428571428572,
+        "brier_soft": 0.0705164223909378,
+        "ece": 0.09968705610795452
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 52,
+        "after_ps_filter": 28,
+        "used": 28
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Manual wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.7619047619047619,
+        "brier_soft": 0.058404214680194855,
+        "ece": 0.31034372448921205
+      },
+      "semisup": {
+        "macro_f1": 0.7619047619047619,
+        "brier_soft": 0.05777004361152649,
+        "ece": 0.23507535457611087
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 31,
+        "after_ps_filter": 18,
+        "used": 18
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Manual wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.43333333333333335,
+        "brier_soft": 0.07933557778596878,
+        "ece": 0.2037165194749832
+      },
+      "semisup": {
+        "macro_f1": 0.43333333333333335,
+        "brier_soft": 0.07347691059112549,
+        "ece": 0.14892033934593202
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 74,
+        "after_ps_filter": 46,
+        "used": 46
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Manual wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.4117647058823529,
+        "brier_soft": 0.0600496344268322,
+        "ece": 0.12851202487945554
+      },
+      "semisup": {
+        "macro_f1": 0.4117647058823529,
+        "brier_soft": 0.060963224619627,
+        "ece": 0.12312922477722166
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 10,
+        "after_ps_filter": 4,
+        "used": 4
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Motorized wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.8166666666666667,
+        "brier_soft": 0.04958662763237953,
+        "ece": 0.25343376939946954
+      },
+      "semisup": {
+        "macro_f1": 0.717948717948718,
+        "brier_soft": 0.05317411199212074,
+        "ece": 0.14953602985902265
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 95,
+        "after_ps_filter": 55,
+        "used": 55
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Motorized wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.717948717948718,
+        "brier_soft": 0.09010627120733261,
+        "ece": 0.26926581697030505
+      },
+      "semisup": {
+        "macro_f1": 0.717948717948718,
+        "brier_soft": 0.09238975495100021,
+        "ece": 0.2402810752391815
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 117,
+        "after_ps_filter": 72,
+        "used": 72
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Motorized wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.375,
+        "brier_soft": 0.14012905955314636,
+        "ece": 0.2214567482471466
+      },
+      "semisup": {
+        "macro_f1": 0.23076923076923078,
+        "brier_soft": 0.15176744759082794,
+        "ece": 0.2906718075275421
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 86,
+        "after_ps_filter": 50,
+        "used": 50
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Motorized wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.898989898989899,
+        "brier_soft": 0.06535865366458893,
+        "ece": 0.474210599064827
+      },
+      "semisup": {
+        "macro_f1": 0.8,
+        "brier_soft": 0.05963633209466934,
+        "ece": 0.21402466893196104
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 106,
+        "after_ps_filter": 61,
+        "used": 61
+      }
+    },
+    {
+      "seed": 48,
+      "aid": "Motorized wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.5238095238095238,
+        "brier_soft": 0.14723196625709534,
+        "ece": 0.39154286384582526
+      },
+      "semisup": {
+        "macro_f1": 0.5238095238095238,
+        "brier_soft": 0.14132681488990784,
+        "ece": 0.38449348211288453
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 24,
+        "after_ps_filter": 14,
+        "used": 14
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Walking cane",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.8070175438596491,
+        "brier_soft": 0.013671498745679855,
+        "ece": 0.3177177147431807
+      },
+      "semisup": {
+        "macro_f1": 0.8070175438596491,
+        "brier_soft": 0.013371729291975498,
+        "ece": 0.26288474147970026
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 132,
+        "after_ps_filter": 81,
+        "used": 81
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Walking cane",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.3888888888888889,
+        "brier_soft": 0.13562887907028198,
+        "ece": 0.21011464433236554
+      },
+      "semisup": {
+        "macro_f1": 0.3888888888888889,
+        "brier_soft": 0.14345170557498932,
+        "ece": 0.09082152084870773
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 37,
+        "after_ps_filter": 21,
+        "used": 21
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Walking cane",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.05954061821103096,
+        "ece": 0.29431894421577454
+      },
+      "semisup": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.057701386511325836,
+        "ece": 0.2997168302536011
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 105,
+        "after_ps_filter": 59,
+        "used": 59
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Walking cane",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.43333333333333335,
+        "brier_soft": 0.11651559919118881,
+        "ece": 0.21427641510963438
+      },
+      "semisup": {
+        "macro_f1": 0.43333333333333335,
+        "brier_soft": 0.12594088912010193,
+        "ece": 0.1519573628902435
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 100,
+        "after_ps_filter": 64,
+        "used": 64
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Walking cane",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.47368421052631576,
+        "brier_soft": 0.05904184654355049,
+        "ece": 0.30498313903808594
+      },
+      "semisup": {
+        "macro_f1": 0.47368421052631576,
+        "brier_soft": 0.06303538382053375,
+        "ece": 0.2950258135795593
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 161,
+        "after_ps_filter": 95,
+        "used": 95
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Walker",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.6857142857142857,
+        "brier_soft": 0.062376078218221664,
+        "ece": 0.2295170588926835
+      },
+      "semisup": {
+        "macro_f1": 0.8035714285714286,
+        "brier_soft": 0.06236347183585167,
+        "ece": 0.30971083315936
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 60,
+        "after_ps_filter": 34,
+        "used": 34
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Walker",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.6071428571428572,
+        "brier_soft": 0.0873221829533577,
+        "ece": 0.07905488122593272
+      },
+      "semisup": {
+        "macro_f1": 0.6071428571428572,
+        "brier_soft": 0.0873313918709755,
+        "ece": 0.12789934331720523
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 53,
+        "after_ps_filter": 27,
+        "used": 27
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Walker",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.6703296703296704,
+        "brier_soft": 0.10647068172693253,
+        "ece": 0.12548816204071045
+      },
+      "semisup": {
+        "macro_f1": 0.6703296703296704,
+        "brier_soft": 0.10328660160303116,
+        "ece": 0.19691050648689268
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 14,
+        "after_ps_filter": 6,
+        "used": 6
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Walker",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.6703296703296704,
+        "brier_soft": 0.07908038794994354,
+        "ece": 0.37873096466064454
+      },
+      "semisup": {
+        "macro_f1": 0.5833333333333333,
+        "brier_soft": 0.08005484193563461,
+        "ece": 0.17718085050582885
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 43,
+        "after_ps_filter": 19,
+        "used": 19
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Walker",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.26515151515151514,
+        "brier_soft": 0.07077536731958389,
+        "ece": 0.22634610831737517
+      },
+      "semisup": {
+        "macro_f1": 0.26515151515151514,
+        "brier_soft": 0.06968076527118683,
+        "ece": 0.22228143513202664
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 28,
+        "after_ps_filter": 14,
+        "used": 14
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Mobility scooter",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.6333333333333333,
+        "brier_soft": 0.09166520088911057,
+        "ece": 0.4660545939748937
+      },
+      "semisup": {
+        "macro_f1": 0.6333333333333333,
+        "brier_soft": 0.09669061005115509,
+        "ece": 0.4517162631858479
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 27,
+        "after_ps_filter": 14,
+        "used": 14
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Mobility scooter",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.2222222222222222,
+        "brier_soft": 0.047069620341062546,
+        "ece": 0.16091225905851886
+      },
+      "semisup": {
+        "macro_f1": 0.3125,
+        "brier_soft": 0.04224171116948128,
+        "ece": 0.157575861974196
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 58,
+        "after_ps_filter": 33,
+        "used": 33
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Mobility scooter",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.6000000000000001,
+        "brier_soft": 0.03578222543001175,
+        "ece": 0.21082485914230345
+      },
+      "semisup": {
+        "macro_f1": 0.6000000000000001,
+        "brier_soft": 0.03462918847799301,
+        "ece": 0.2163722962141037
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 14,
+        "after_ps_filter": 8,
+        "used": 8
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Mobility scooter",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.6703296703296704,
+        "brier_soft": 0.06398583948612213,
+        "ece": 0.4164558231830597
+      },
+      "semisup": {
+        "macro_f1": 0.5833333333333333,
+        "brier_soft": 0.06600116193294525,
+        "ece": 0.31954048871994023
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 31,
+        "after_ps_filter": 13,
+        "used": 13
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Mobility scooter",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.5238095238095238,
+        "brier_soft": 0.062284938991069794,
+        "ece": 0.2620033621788025
+      },
+      "semisup": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.0584343858063221,
+        "ece": 0.2635947972536087
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 22,
+        "after_ps_filter": 11,
+        "used": 11
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Manual wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.2857142857142857,
+        "brier_soft": 0.10881055146455765,
+        "ece": 0.1513707881624048
+      },
+      "semisup": {
+        "macro_f1": 0.2857142857142857,
+        "brier_soft": 0.11336670070886612,
+        "ece": 0.10993767326528375
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 77,
+        "after_ps_filter": 39,
+        "used": 39
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Manual wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.3125,
+        "brier_soft": 0.09833214432001114,
+        "ece": 0.18399861725893885
+      },
+      "semisup": {
+        "macro_f1": 0.35294117647058826,
+        "brier_soft": 0.10607368499040604,
+        "ece": 0.15456808426163413
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 17,
+        "after_ps_filter": 10,
+        "used": 10
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Manual wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.696969696969697,
+        "brier_soft": 0.09837297350168228,
+        "ece": 0.1531860828399658
+      },
+      "semisup": {
+        "macro_f1": 0.696969696969697,
+        "brier_soft": 0.10128656774759293,
+        "ece": 0.1501413136720657
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 11,
+        "after_ps_filter": 8,
+        "used": 8
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Manual wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.8666666666666667,
+        "brier_soft": 0.02487163245677948,
+        "ece": 0.3984441220760346
+      },
+      "semisup": {
+        "macro_f1": 0.8666666666666667,
+        "brier_soft": 0.024064496159553528,
+        "ece": 0.39235385656356814
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 18,
+        "after_ps_filter": 10,
+        "used": 10
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Manual wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.03820529580116272,
+        "ece": 0.3113461583852768
+      },
+      "semisup": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.038954708725214005,
+        "ece": 0.3016346365213394
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 27,
+        "after_ps_filter": 14,
+        "used": 14
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Motorized wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.45,
+        "brier_soft": 0.18566860258579254,
+        "ece": 0.29806163094260474
+      },
+      "semisup": {
+        "macro_f1": 0.45,
+        "brier_soft": 0.18391618132591248,
+        "ece": 0.303284379568967
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 58,
+        "after_ps_filter": 35,
+        "used": 35
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Motorized wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.717948717948718,
+        "brier_soft": 0.09920082241296768,
+        "ece": 0.3061512220989574
+      },
+      "semisup": {
+        "macro_f1": 0.6071428571428572,
+        "brier_soft": 0.11351365596055984,
+        "ece": 0.2742403501814062
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 73,
+        "after_ps_filter": 43,
+        "used": 43
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Motorized wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.19554980099201202,
+        "ece": 0.2996879696846008
+      },
+      "semisup": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.207238107919693,
+        "ece": 0.23698592483997347
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 26,
+        "after_ps_filter": 14,
+        "used": 14
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Motorized wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.696969696969697,
+        "brier_soft": 0.08904486149549484,
+        "ece": 0.2758547246456146
+      },
+      "semisup": {
+        "macro_f1": 0.8,
+        "brier_soft": 0.08442563563585281,
+        "ece": 0.39076159000396726
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 61,
+        "after_ps_filter": 35,
+        "used": 35
+      }
+    },
+    {
+      "seed": 49,
+      "aid": "Motorized wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.4,
+        "brier_soft": 0.1598280370235443,
+        "ece": 0.2938345462083817
+      },
+      "semisup": {
+        "macro_f1": 0.2074074074074074,
+        "brier_soft": 0.16323718428611755,
+        "ece": 0.31496527791023254
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 55,
+        "after_ps_filter": 27,
+        "used": 27
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Walking cane",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.42105263157894735,
+        "brier_soft": 0.07441330701112747,
+        "ece": 0.11634815552017908
+      },
+      "semisup": {
+        "macro_f1": 0.3888888888888889,
+        "brier_soft": 0.07312466204166412,
+        "ece": 0.20110536434433676
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 96,
+        "after_ps_filter": 68,
+        "used": 68
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Walking cane",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.6944444444444444,
+        "brier_soft": 0.04712716490030289,
+        "ece": 0.2099666649645025
+      },
+      "semisup": {
+        "macro_f1": 0.3888888888888889,
+        "brier_soft": 0.04782285541296005,
+        "ece": 0.3008717921647158
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 76,
+        "after_ps_filter": 54,
+        "used": 54
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Walking cane",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.47368421052631576,
+        "brier_soft": 0.048022761940956116,
+        "ece": 0.2863136351108551
+      },
+      "semisup": {
+        "macro_f1": 0.47368421052631576,
+        "brier_soft": 0.0428275503218174,
+        "ece": 0.27501749992370605
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 45,
+        "after_ps_filter": 29,
+        "used": 29
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Walking cane",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.47368421052631576,
+        "brier_soft": 0.04756799712777138,
+        "ece": 0.25980963706970217
+      },
+      "semisup": {
+        "macro_f1": 0.47368421052631576,
+        "brier_soft": 0.04557376727461815,
+        "ece": 0.2574111700057984
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 43,
+        "after_ps_filter": 31,
+        "used": 31
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Walking cane",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.04922536760568619,
+        "ece": 0.22019134759902953
+      },
+      "semisup": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.04048594459891319,
+        "ece": 0.24112080931663515
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 62,
+        "after_ps_filter": 47,
+        "used": 47
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Walker",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.45,
+        "brier_soft": 0.11059998720884323,
+        "ece": 0.22767770290374756
+      },
+      "semisup": {
+        "macro_f1": 0.45,
+        "brier_soft": 0.10004713386297226,
+        "ece": 0.37496877258474176
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 46,
+        "after_ps_filter": 28,
+        "used": 28
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Walker",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.3333333333333333,
+        "brier_soft": 0.10391797870397568,
+        "ece": 0.23251602866432886
+      },
+      "semisup": {
+        "macro_f1": 0.3333333333333333,
+        "brier_soft": 0.10256189852952957,
+        "ece": 0.3229891197247939
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 15,
+        "after_ps_filter": 9,
+        "used": 9
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Walker",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.2,
+        "brier_soft": 0.14920654892921448,
+        "ece": 0.3659797966480255
+      },
+      "semisup": {
+        "macro_f1": 0.2,
+        "brier_soft": 0.14325164258480072,
+        "ece": 0.3671587526798248
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 43,
+        "after_ps_filter": 24,
+        "used": 24
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Walker",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.7619047619047619,
+        "brier_soft": 0.026258274912834167,
+        "ece": 0.21417343020439147
+      },
+      "semisup": {
+        "macro_f1": 0.7619047619047619,
+        "brier_soft": 0.02537599578499794,
+        "ece": 0.22025174796581268
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 57,
+        "after_ps_filter": 37,
+        "used": 37
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Walker",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.053944457322359085,
+        "ece": 0.16441165804862973
+      },
+      "semisup": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.048497457057237625,
+        "ece": 0.26396625936031337
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 38,
+        "after_ps_filter": 25,
+        "used": 25
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Mobility scooter",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.5299145299145299,
+        "brier_soft": 0.04748574271798134,
+        "ece": 0.22397898543964734
+      },
+      "semisup": {
+        "macro_f1": 0.6071428571428572,
+        "brier_soft": 0.042394090443849564,
+        "ece": 0.17234807935628021
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 18,
+        "after_ps_filter": 14,
+        "used": 14
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Mobility scooter",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.26666666666666666,
+        "brier_soft": 0.059817731380462646,
+        "ece": 0.3011530989950353
+      },
+      "semisup": {
+        "macro_f1": 0.4107142857142857,
+        "brier_soft": 0.057334885001182556,
+        "ece": 0.08914877067912709
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 23,
+        "after_ps_filter": 12,
+        "used": 12
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Mobility scooter",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.6703296703296704,
+        "brier_soft": 0.03538614511489868,
+        "ece": 0.480094438791275
+      },
+      "semisup": {
+        "macro_f1": 0.5238095238095238,
+        "brier_soft": 0.03703134506940842,
+        "ece": 0.17613902390003205
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 25,
+        "after_ps_filter": 17,
+        "used": 17
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Mobility scooter",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.5238095238095238,
+        "brier_soft": 0.06984387338161469,
+        "ece": 0.36298165023326867
+      },
+      "semisup": {
+        "macro_f1": 0.5238095238095238,
+        "brier_soft": 0.07156684249639511,
+        "ece": 0.20936826169490813
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 12,
+        "after_ps_filter": 10,
+        "used": 10
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Mobility scooter",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.6000000000000001,
+        "brier_soft": 0.05864713340997696,
+        "ece": 0.20470436215400692
+      },
+      "semisup": {
+        "macro_f1": 0.6000000000000001,
+        "brier_soft": 0.06037069112062454,
+        "ece": 0.4082358360290528
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 23,
+        "after_ps_filter": 18,
+        "used": 18
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Manual wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.6857142857142857,
+        "brier_soft": 0.04964553937315941,
+        "ece": 0.23632145740769125
+      },
+      "semisup": {
+        "macro_f1": 0.6857142857142857,
+        "brier_soft": 0.04980703443288803,
+        "ece": 0.24245924841273914
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 23,
+        "after_ps_filter": 14,
+        "used": 14
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Manual wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.5416666666666666,
+        "brier_soft": 0.05780818685889244,
+        "ece": 0.13949082114479758
+      },
+      "semisup": {
+        "macro_f1": 0.611764705882353,
+        "brier_soft": 0.054141078144311905,
+        "ece": 0.2271856665611267
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 39,
+        "after_ps_filter": 23,
+        "used": 23
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Manual wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.23076923076923078,
+        "brier_soft": 0.1096547394990921,
+        "ece": 0.3722171545028687
+      },
+      "semisup": {
+        "macro_f1": 0.23076923076923078,
+        "brier_soft": 0.11089136451482773,
+        "ece": 0.37526832520961756
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 52,
+        "after_ps_filter": 35,
+        "used": 35
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Manual wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.375,
+        "brier_soft": 0.08410649001598358,
+        "ece": 0.19943782985210412
+      },
+      "semisup": {
+        "macro_f1": 0.375,
+        "brier_soft": 0.08461765199899673,
+        "ece": 0.1992995202541351
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 17,
+        "after_ps_filter": 13,
+        "used": 13
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Manual wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.5523809523809523,
+        "brier_soft": 0.06552340090274811,
+        "ece": 0.3255320131778717
+      },
+      "semisup": {
+        "macro_f1": 0.47863247863247865,
+        "brier_soft": 0.06610371172428131,
+        "ece": 0.21323245465755464
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 27,
+        "after_ps_filter": 16,
+        "used": 16
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Motorized wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.6071428571428572,
+        "brier_soft": 0.1488140970468521,
+        "ece": 0.33316002921624616
+      },
+      "semisup": {
+        "macro_f1": 0.47619047619047616,
+        "brier_soft": 0.147676020860672,
+        "ece": 0.27682607553221966
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 74,
+        "after_ps_filter": 53,
+        "used": 53
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Motorized wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.717948717948718,
+        "brier_soft": 0.16606327891349792,
+        "ece": 0.32309033653952857
+      },
+      "semisup": {
+        "macro_f1": 0.717948717948718,
+        "brier_soft": 0.16307644546031952,
+        "ece": 0.3064408437772231
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 61,
+        "after_ps_filter": 41,
+        "used": 41
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Motorized wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.4949494949494949,
+        "brier_soft": 0.1166524663567543,
+        "ece": 0.2842623353004456
+      },
+      "semisup": {
+        "macro_f1": 0.4949494949494949,
+        "brier_soft": 0.11176656186580658,
+        "ece": 0.20374730229377747
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 59,
+        "after_ps_filter": 40,
+        "used": 40
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Motorized wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.48888888888888893,
+        "brier_soft": 0.05810021609067917,
+        "ece": 0.39295510053634647
+      },
+      "semisup": {
+        "macro_f1": 0.8,
+        "brier_soft": 0.04968330264091492,
+        "ece": 0.2556899189949036
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 91,
+        "after_ps_filter": 58,
+        "used": 58
+      }
+    },
+    {
+      "seed": 50,
+      "aid": "Motorized wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.375,
+        "brier_soft": 0.13985082507133484,
+        "ece": 0.270327490568161
+      },
+      "semisup": {
+        "macro_f1": 0.375,
+        "brier_soft": 0.15854795277118683,
+        "ece": 0.29419911205768584
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 65,
+        "after_ps_filter": 44,
+        "used": 44
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Walking cane",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.611764705882353,
+        "brier_soft": 0.0992109552025795,
+        "ece": 0.17986376719041305
+      },
+      "semisup": {
+        "macro_f1": 0.611764705882353,
+        "brier_soft": 0.08664368838071823,
+        "ece": 0.1803192442113703
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 62,
+        "after_ps_filter": 41,
+        "used": 41
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Walking cane",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.3888888888888889,
+        "brier_soft": 0.06379164010286331,
+        "ece": 0.13125808401541278
+      },
+      "semisup": {
+        "macro_f1": 0.3888888888888889,
+        "brier_soft": 0.0565916933119297,
+        "ece": 0.19213079322468152
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 167,
+        "after_ps_filter": 103,
+        "used": 103
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Walking cane",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.1057717427611351,
+        "ece": 0.36494904160499575
+      },
+      "semisup": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.10484669357538223,
+        "ece": 0.3659941554069519
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 120,
+        "after_ps_filter": 76,
+        "used": 76
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Walking cane",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.47368421052631576,
+        "brier_soft": 0.04695722833275795,
+        "ece": 0.25573157072067265
+      },
+      "semisup": {
+        "macro_f1": 0.47368421052631576,
+        "brier_soft": 0.05113770812749863,
+        "ece": 0.2183022201061249
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 156,
+        "after_ps_filter": 97,
+        "used": 97
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Walking cane",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.0836065486073494,
+        "ece": 0.2289742112159729
+      },
+      "semisup": {
+        "macro_f1": 0.4444444444444444,
+        "brier_soft": 0.07115917652845383,
+        "ece": 0.34934992194175724
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 164,
+        "after_ps_filter": 104,
+        "used": 104
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Walker",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.47619047619047616,
+        "brier_soft": 0.15168434381484985,
+        "ece": 0.28805608641017566
+      },
+      "semisup": {
+        "macro_f1": 0.37777777777777777,
+        "brier_soft": 0.14756940305233002,
+        "ece": 0.364922125231136
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 132,
+        "after_ps_filter": 83,
+        "used": 83
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Walker",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.2857142857142857,
+        "brier_soft": 0.07491517812013626,
+        "ece": 0.17201206358996302
+      },
+      "semisup": {
+        "macro_f1": 0.2857142857142857,
+        "brier_soft": 0.06958768516778946,
+        "ece": 0.16160130500793457
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 20,
+        "after_ps_filter": 9,
+        "used": 9
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Walker",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.696969696969697,
+        "brier_soft": 0.052316952496767044,
+        "ece": 0.23486270308494567
+      },
+      "semisup": {
+        "macro_f1": 0.696969696969697,
+        "brier_soft": 0.05958918482065201,
+        "ece": 0.12233476638793946
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 65,
+        "after_ps_filter": 41,
+        "used": 41
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Walker",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.29292929292929293,
+        "brier_soft": 0.10188939422369003,
+        "ece": 0.24860597848892213
+      },
+      "semisup": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.09290958940982819,
+        "ece": 0.16728034913539885
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 38,
+        "after_ps_filter": 19,
+        "used": 19
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Walker",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.6000000000000001,
+        "brier_soft": 0.05659383535385132,
+        "ece": 0.24808713793754578
+      },
+      "semisup": {
+        "macro_f1": 0.6000000000000001,
+        "brier_soft": 0.05187250301241875,
+        "ece": 0.29246962368488305
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 73,
+        "after_ps_filter": 45,
+        "used": 45
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Mobility scooter",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.36363636363636365,
+        "brier_soft": 0.046321846544742584,
+        "ece": 0.23042633045803412
+      },
+      "semisup": {
+        "macro_f1": 0.3418803418803419,
+        "brier_soft": 0.041656993329524994,
+        "ece": 0.2681568454612385
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 53,
+        "after_ps_filter": 34,
+        "used": 34
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Mobility scooter",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.425,
+        "brier_soft": 0.04790322482585907,
+        "ece": 0.3527776436372237
+      },
+      "semisup": {
+        "macro_f1": 0.37777777777777777,
+        "brier_soft": 0.04615847021341324,
+        "ece": 0.2528510066595945
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 60,
+        "after_ps_filter": 40,
+        "used": 40
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Mobility scooter",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.4949494949494949,
+        "brier_soft": 0.060783177614212036,
+        "ece": 0.17801608741283415
+      },
+      "semisup": {
+        "macro_f1": 0.4949494949494949,
+        "brier_soft": 0.06390926241874695,
+        "ece": 0.17572714686393737
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 33,
+        "after_ps_filter": 22,
+        "used": 22
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Mobility scooter",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.2857142857142857,
+        "brier_soft": 0.054730724543333054,
+        "ece": 0.26252365708351133
+      },
+      "semisup": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.054870158433914185,
+        "ece": 0.2682950973510742
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 75,
+        "after_ps_filter": 45,
+        "used": 45
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Mobility scooter",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.2619047619047619,
+        "brier_soft": 0.054318618029356,
+        "ece": 0.2853639513254166
+      },
+      "semisup": {
+        "macro_f1": 0.3162393162393162,
+        "brier_soft": 0.05300077795982361,
+        "ece": 0.2208051085472107
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 77,
+        "after_ps_filter": 49,
+        "used": 49
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Manual wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.3833333333333333,
+        "brier_soft": 0.05545166879892349,
+        "ece": 0.18905057690360325
+      },
+      "semisup": {
+        "macro_f1": 0.3833333333333333,
+        "brier_soft": 0.05414247512817383,
+        "ece": 0.15044578638943756
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 57,
+        "after_ps_filter": 38,
+        "used": 38
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Manual wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.5416666666666666,
+        "brier_soft": 0.054737161844968796,
+        "ece": 0.18267798965627496
+      },
+      "semisup": {
+        "macro_f1": 0.5416666666666666,
+        "brier_soft": 0.0600106380879879,
+        "ece": 0.1345763260667974
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 36,
+        "after_ps_filter": 22,
+        "used": 22
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Manual wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.5238095238095238,
+        "brier_soft": 0.0784301906824112,
+        "ece": 0.25081579685211186
+      },
+      "semisup": {
+        "macro_f1": 0.6000000000000001,
+        "brier_soft": 0.08581740409135818,
+        "ece": 0.31414997577667236
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 64,
+        "after_ps_filter": 39,
+        "used": 39
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Manual wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.2380952380952381,
+        "brier_soft": 0.09374966472387314,
+        "ece": 0.26219469904899595
+      },
+      "semisup": {
+        "macro_f1": 0.5833333333333333,
+        "brier_soft": 0.08924759924411774,
+        "ece": 0.27983882129192356
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 66,
+        "after_ps_filter": 44,
+        "used": 44
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Manual wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.375,
+        "brier_soft": 0.06343244016170502,
+        "ece": 0.2943863153457642
+      },
+      "semisup": {
+        "macro_f1": 0.375,
+        "brier_soft": 0.06504015624523163,
+        "ece": 0.292861407995224
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 41,
+        "after_ps_filter": 25,
+        "used": 25
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Motorized wheelchair",
+      "fold": 0,
+      "baseline": {
+        "macro_f1": 0.5454545454545454,
+        "brier_soft": 0.20103596150875092,
+        "ece": 0.3222800384868275
+      },
+      "semisup": {
+        "macro_f1": 0.24074074074074073,
+        "brier_soft": 0.18776997923851013,
+        "ece": 0.3131201619451696
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 131,
+        "after_ps_filter": 82,
+        "used": 82
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Motorized wheelchair",
+      "fold": 1,
+      "baseline": {
+        "macro_f1": 0.5454545454545454,
+        "brier_soft": 0.10593412071466446,
+        "ece": 0.32638379389589484
+      },
+      "semisup": {
+        "macro_f1": 0.4424242424242424,
+        "brier_soft": 0.08842220157384872,
+        "ece": 0.2348114414648576
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 92,
+        "after_ps_filter": 56,
+        "used": 56
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Motorized wheelchair",
+      "fold": 2,
+      "baseline": {
+        "macro_f1": 0.5833333333333333,
+        "brier_soft": 0.1363036185503006,
+        "ece": 0.2676769196987152
+      },
+      "semisup": {
+        "macro_f1": 0.6703296703296704,
+        "brier_soft": 0.1348332166671753,
+        "ece": 0.43985665440559385
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 69,
+        "after_ps_filter": 42,
+        "used": 42
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Motorized wheelchair",
+      "fold": 3,
+      "baseline": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.12992054224014282,
+        "ece": 0.17614646553993224
+      },
+      "semisup": {
+        "macro_f1": 0.45054945054945056,
+        "brier_soft": 0.11660949140787125,
+        "ece": 0.12419990897178651
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 110,
+        "after_ps_filter": 73,
+        "used": 73
+      }
+    },
+    {
+      "seed": 51,
+      "aid": "Motorized wheelchair",
+      "fold": 4,
+      "baseline": {
+        "macro_f1": 0.2857142857142857,
+        "brier_soft": 0.1657932847738266,
+        "ece": 0.24162303209304814
+      },
+      "semisup": {
+        "macro_f1": 0.2857142857142857,
+        "brier_soft": 0.14607910811901093,
+        "ece": 0.20255226492881778
+      },
+      "filter": {
+        "pool_size": 484,
+        "after_entropy": 128,
+        "after_ps_filter": 79,
+        "used": 79
+      }
+    }
+  ]
+}

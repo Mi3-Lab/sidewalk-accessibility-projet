@@ -77,8 +77,25 @@ def load_and_score_graph(graph_path: str, scores_path: str) -> nx.Graph:
         else:
             for aid in AIDS:
                 data[aid] = PRIOR[aid]
+    match_pct = 100 * matched / G.number_of_edges()
     print(f"  Edges matched to scores: {matched}/{G.number_of_edges()} "
-          f"({100*matched/G.number_of_edges():.1f}%)")
+          f"({match_pct:.1f}%)")
+
+    # A graph paired with edge scores computed for a *different* graph still
+    # runs: unmatched edges quietly fall back to the constant per-aid priors, and
+    # the result looks plausible while carrying almost no model signal. That is
+    # how a mismatched Oakland-graph run ended up alongside the real one in
+    # results/routing/. Fail loudly instead.
+    if match_pct < 50:
+        raise SystemExit(
+            f"ERROR: only {match_pct:.1f}% of edges in {graph_path} matched "
+            f"{scores_path}. These are almost certainly from different graphs, and "
+            f"the unmatched edges would silently become constant priors. Check that "
+            f"the graph and the edge scores were built for the same area."
+        )
+    if match_pct < 90:
+        print(f"  WARNING: {100 - match_pct:.1f}% of edges fell back to constant "
+              f"priors — check that graph and scores describe the same area.")
     return G
 
 
@@ -183,9 +200,28 @@ def main():
 
     print(f"  Done. No-path failures: {failed}")
 
-    # Compute summary statistics
+    # Compute summary statistics.
+    #
+    # The inputs are recorded alongside the numbers: results produced from the
+    # PS-label edge scores and from the GSV-inference edge scores differ a lot,
+    # and without this it is impossible to tell after the fact which run a
+    # published figure came from.
+    with open(args.edge_scores) as f:
+        _raw = json.load(f)
+    edge_src_counts: dict[str, int] = {}
+    for v in _raw.get("edges", _raw).values():
+        if isinstance(v, dict):
+            src = v.get("source", "?")
+            edge_src_counts[src] = edge_src_counts.get(src, 0) + 1
+
     summary = {"n_pairs": len(od_pairs), "barrier_cost": args.barrier_cost,
-               "seed": args.seed, "min_dist_m": args.min_dist, "per_aid": {}}
+               "seed": args.seed, "min_dist_m": args.min_dist,
+               "inputs": {
+                   "edge_scores": str(args.edge_scores),
+                   "graph_cache": str(args.graph_cache),
+                   "edge_source_counts": edge_src_counts,
+               },
+               "per_aid": {}}
     print("\n=== Monte Carlo Summary ===")
     print(f"{'Aid':<22} {'Mean Δp_yes':>11} {'Median Δp_yes':>13} "
           f"{'% improved':>11} {'Mean Δdist%':>11}")
